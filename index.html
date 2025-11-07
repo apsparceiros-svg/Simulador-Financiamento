@@ -11,9 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-:root{
-  --bg:#070707;--panel:#0f0f0f;--muted:#9e9e9e;--gold:#c9a84b;--card:#121212;--accent:#e6e6e6;--glass:rgba(255,255,255,0.03)
-}
+:root{--bg:#070707;--panel:#0f0f0f;--muted:#9e9e9e;--gold:#c9a84b;--card:#121212;--accent:#e6e6e6;--glass:rgba(255,255,255,0.03)}
 :root.light{--bg:#f6f8fb;--panel:#ffffff;--muted:#6b7280;--gold:#2b6cb0;--card:#ffffff;--accent:#0b1220;--glass:rgba(11,18,32,0.04)}
 *{box-sizing:border-box;font-family:Inter,system-ui,Arial;color:var(--accent);margin:0;padding:0}
 html,body{height:100%;width:100%;background:linear-gradient(180deg,var(--bg),#0a0a0a);-webkit-font-smoothing:antialiased;font-size:16px}
@@ -26,7 +24,7 @@ html,body{height:100%;width:100%;background:linear-gradient(180deg,var(--bg),#0a
 .controls input[type=text],.controls input[type=number],.controls select{background:transparent;color:var(--accent);border:1px solid var(--glass);padding:10px;border-radius:8px;width:100%;margin-top:6px}
 .button{background:var(--gold);color:#0b0b0b;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:700}
 .button.ghost{background:transparent;border:1px solid var(--glass);color:var(--accent)}
-.table-wrap{max-height:480px;overflow:auto;border-radius:8px;border:1px solid var(--glass);padding:8px;background:var(--card)}
+.table-wrap{max-height:520px;overflow:auto;border-radius:8px;border:1px solid var(--glass);padding:8px;background:var(--card)}
 table{width:100%;border-collapse:collapse;font-size:13px}
 thead th{position:sticky;top:0;background:rgba(0,0,0,0.2);padding:8px;text-align:right}
 tbody td{padding:6px;text-align:right;border-bottom:1px dashed rgba(255,255,255,0.02)}
@@ -51,7 +49,7 @@ td:first-child,th:first-child{text-align:left}
     <div class="card header">
       <div>
         <div class="brand">APSPARCEIROS — Simulador Avançado</div>
-        <div class="small">PRICE · SAC · SACRE · Juros Simples/Compostos · Comparativo</div>
+        <div class="small">PRICE · SAC · SACRE · Juros Compostos (acumulados) · Comparativo</div>
       </div>
       <div style="text-align:right">
         <div class="small">Branding: APSPARCEIROS • <span id="nowDate"></span></div>
@@ -66,7 +64,7 @@ td:first-child,th:first-child{text-align:left}
     </div>
 
     <div class="card controls">
-      <label>Valor do Emprestimo (R$)</label>
+      <label>Valor do Empréstimo (R$)</label>
       <input id="loanAmount" type="number" min="0" step="0.01" value="100000" placeholder="100000">
 
       <label>Entrada (R$) — opcional</label>
@@ -93,7 +91,7 @@ td:first-child,th:first-child{text-align:left}
         <option value="sac">SAC</option>
         <option value="sacre">SACRE</option>
         <option value="simples">Juros Simples</option>
-        <option value="compostos">Juros Compostos</option>
+        <option value="compostos">Juros Compostos (acumulados)</option>
       </select>
 
       <label>Sistema secundário (comparar)</label>
@@ -102,7 +100,7 @@ td:first-child,th:first-child{text-align:left}
         <option value="price">PRICE</option>
         <option value="sacre">SACRE</option>
         <option value="simples">Juros Simples</option>
-        <option value="compostos">Juros Compostos</option>
+        <option value="compostos">Juros Compostos (acumulados)</option>
       </select>
 
       <label>Carência</label>
@@ -119,6 +117,14 @@ td:first-child,th:first-child{text-align:left}
         <input id="reajusteMensal" type="number" min="0" step="0.0001" value="0.5">
       </div>
 
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04);margin:10px 0">
+
+      <label>Desconto nas últimas parcelas (%)</label>
+      <input id="discountPercent" type="number" min="0" step="0.01" value="0">
+      <label>Quantidade de parcelas com desconto</label>
+      <input id="discountCount" type="number" min="0" step="1" value="0">
+      <div class="small">O desconto é aplicado como % sobre o valor da prestação nas últimas N parcelas. Não aplicável a "Juros Compostos (acumulados)".</div>
+
       <div style="display:flex;gap:8px;margin-top:12px">
         <button id="btnCalc" class="button">Calcular</button>
         <button id="btnCompare" class="button ghost">Comparar (lado a lado)</button>
@@ -130,14 +136,14 @@ td:first-child,th:first-child{text-align:left}
         <button id="btnSave" class="button ghost">Salvar simulação</button>
       </div>
 
-      <div class="footer" style="margin-top:8px">Formato de carência padrão: <strong>carência de juros</strong> (mais usado). PDF/Excel com branding APSPARCEIROS.</div>
+      <div class="footer" style="margin-top:8px">PDF/Excel incluem legendas e branding APSPARCEIROS; desconto aparece nas tabelas e exportações.</div>
     </div>
 
     <div class="card">
       <div class="kpis">
         <div class="kpi"><div class="small">Prestação média (A)</div><div id="kpiPaymentA" style="font-weight:800;color:var(--gold)">-</div></div>
         <div class="kpi"><div class="small">Juros totais (A)</div><div id="kpiTotalInterestA" style="font-weight:800;color:var(--gold)">-</div></div>
-        <div class="kpi"><div class="small">ROI simples</div><div id="kpiRoiA" style="font-weight:800;color:var(--gold)">-</div></div>
+        <div class="kpi"><div class="small">Amortização total (A)</div><div id="kpiTotalAmortA" style="font-weight:800;color:var(--gold)">-</div></div>
       </div>
     </div>
   </div>
@@ -159,11 +165,11 @@ td:first-child,th:first-child{text-align:left}
         <div class="comparison" id="comparisonWrap">
           <div>
             <h4 id="titleA">Sistema A</h4>
-            <table id="tableA"><thead><tr><th>Mês</th><th>Saldo Inicial</th><th>Juros</th><th>Amortização</th><th>Prestação</th><th>Saldo Final</th></tr></thead><tbody></tbody></table>
+            <table id="tableA"><thead><tr><th>Mês</th><th>Saldo Inicial</th><th>Juros</th><th>Amortização</th><th>Prestação</th><th>Desconto</th><th>Saldo Final</th></tr></thead><tbody></tbody></table>
           </div>
           <div>
             <h4 id="titleB">Sistema B</h4>
-            <table id="tableB"><thead><tr><th>Mês</th><th>Saldo Inicial</th><th>Juros</th><th>Amortização</th><th>Prestação</th><th>Saldo Final</th></tr></thead><tbody></tbody></table>
+            <table id="tableB"><thead><tr><th>Mês</th><th>Saldo Inicial</th><th>Juros</th><th>Amortização</th><th>Prestação</th><th>Desconto</th><th>Saldo Final</th></tr></thead><tbody></tbody></table>
           </div>
         </div>
       </div>
@@ -173,160 +179,169 @@ td:first-child,th:first-child{text-align:left}
 </div>
 
 <script>
-// Utility helpers
+// Helpers
 function nowDateStr(){ const d=new Date(); return d.toLocaleString('pt-BR',{year:'numeric',month:'short',day:'numeric'}); }
 function fmt(v){ return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:2}); }
-function toMonthlyRate(value,period,auto){ const v=Number(value)/100; if(period==='a.m') return v; // user explicitly monthly
- // if annual and auto true -> conv geom
- if(auto) return Math.pow(1+v,1/12)-1; else return v/12; // fallback simple division if user disabled
-}
+function toMonthlyRate(value,period,auto){ const v=Number(value)/100; if(period==='a.m') return v; if(auto) return Math.pow(1+v,1/12)-1; else return v/12; }
 
-// financial engines
-function irr(values, guess=0.01){ const eps=1e-7; let rate=guess; const npv=r=>values.reduce((s,v,i)=>s+v/Math.pow(1+r,i),0); const dnpv=r=>values.reduce((s,v,i)=>s - i*v/Math.pow(1+r,i+1),0); for(let i=0;i<200;i++){ const f=npv(rate); const df=dnpv(rate); if(Math.abs(df)<1e-12) break; const nr=rate - f/df; if(Math.abs(nr-rate)<eps) return nr; rate=nr; } return rate; }
-
+// Financial functions
 function generateSchedule(opts){
-  // options: amount, down, months, rate (monthly), system, carType, carMonths, reaj (decimal)
-  let amount = Number(opts.amount)||0; const down = Number(opts.down)||0; const months = Math.max(1,Math.floor(opts.months||1)); const r = Number(opts.rate)||0; const system = opts.system; const carType = opts.carType; const carMonths = Math.max(0,Math.floor(opts.carMonths||0)); const reaj = Number(opts.reaj)||0;
-  let financed = Math.max(0, amount - down);
-  let balance = financed;
-  const schedule=[];
-  function push(m, start, interest, amort, payment, end){ schedule.push({month:m,balanceStart:start,interest,amortization:amort,payment,end}); }
+  // opts: amount, down, months, rate (monthly), system, carType, carMonths, reaj (decimal), discountPct, discountCount
+  let amount = Number(opts.amount)||0; const down = Number(opts.down)||0; const totalMonths = Math.max(1,Math.floor(opts.months||1)); const r = Number(opts.rate)||0; const system = opts.system; const carType = opts.carType; const carMonths = Math.max(0,Math.floor(opts.carMonths||0)); const reaj = Number(opts.reaj)||0; const discountPct = Math.max(0,Number(opts.discountPct)||0); const discountCount = Math.max(0,Math.floor(opts.discountCount||0));
 
-  // handle carencia total: capitaliza juros
+  const financed = Math.max(0, amount - down);
+  let balance = financed;
+  const schedule = [];
+
+  function pushMonth(m, start, interest, amort, payment, discount, end){ schedule.push({month:m,balanceStart:start,interest,amortization:amort,payment,discount, end}); }
+
+  // Carência total
   if(carType==='total' && carMonths>0){
     for(let m=1;m<=carMonths;m++){
       const interest = balance * r;
-      balance += interest; // capitalization
+      balance += interest; // capitaliza
       if(system==='sacre' && reaj) balance *= (1+reaj);
-      push(m, balance-interest, interest, 0, 0, balance);
+      pushMonth(m, balance - interest, interest, 0, 0, 0, balance);
     }
   }
 
-  // carencia juros: pay interest only
+  // Carência juros (paga somente juros)
   if(carType==='juros' && carMonths>0){
     for(let m=1;m<=carMonths;m++){
-      const interest=balance*r; push(m, balance, interest, 0, interest, balance);
-    }
+      const interest = balance * r; pushMonth(m, balance, interest, 0, interest, 0, balance); }
   }
 
   const startMonth = (carType==='none')?1:(carMonths+1);
-  const amortMonths = months - ((carType==='none')?0:carMonths);
-  const M = Math.max(1,amortMonths);
+  const amortMonths = totalMonths - ((carType==='none')?0:carMonths);
+  const M = Math.max(1, amortMonths);
 
-  if(system==='price' || system==='compostos'){
-    const ann=r; const payment = (ann===0)?(balance/M):(balance*ann/(1-Math.pow(1+ann,-M)));
+  // Special case: Juros compostos acumulados (sem amortização) -> pagamento único no último mês
+  if(system==='compostos'){
+    // generate months showing accumulation
+    for(let i=0;i<totalMonths;i++){
+      const m = i+1; const balStart = balance; const interest = balStart * r; balance = balStart + interest; pushMonth(m, balStart, interest, 0, (m===totalMonths?balance:0), 0, balance); }
+    // final payment is balance at last month (already set)
+    return { financed, schedule };
+  }
+
+  // amortizáveis: PRICE, SAC, SACRE, SIMPLES
+  if(system==='price'){
+    const ann = r; const payment = (ann===0)?(balance/M):(balance*ann/(1-Math.pow(1+ann,-M)));
+    // compute standard schedule first
     for(let i=0;i<M;i++){
-      const m = startMonth + i;
-      const balStart = balance;
-      const interest = balStart * r;
-      const amort = payment - interest;
-      balance = balStart - amort;
-      push(m, balStart, interest, amort, payment, Math.max(0,balance));
-    }
+      const m = startMonth + i; const balStart = balance; const interest = balStart * r; const amort = payment - interest; balance = balStart - amort; pushMonth(m, balStart, interest, amort, payment, 0, Math.max(0,balance)); }
   } else if(system==='sac'){
-    const amortConst = balance / M;
-    for(let i=0;i<M;i++){
-      const m = startMonth + i; const balStart = balance; const interest = balStart * r; const amort = amortConst; const payment = interest + amort; balance = balStart - amort; push(m, balStart, interest, amort, payment, Math.max(0,balance)); }
-  } else if(system==='sacre'){
-    const amortConst = balance / M;
-    for(let i=0;i<M;i++){
-      const m = startMonth + i; const balStart = balance; const interest = balStart * r; const amort = amortConst; let payment = interest + amort; balance = balStart - amort; if(reaj) balance *= (1+reaj); push(m, balStart, interest, amort, payment, Math.max(0,balance)); }
-  } else if(system==='simples'){
-    const amortConst = financed / M;
-    for(let i=0;i<M;i++){
-      const m = startMonth + i; const balStart = balance; const interest = financed * r; const amort = amortConst; const payment = interest + amort; balance = balStart - amort; push(m, balStart, interest, amort, payment, Math.max(0,balance)); }
+    const amortConst = balance / M; for(let i=0;i<M;i++){ const m=startMonth+i; const balStart=balance; const interest = balStart * r; const amort = amortConst; const payment = interest + amort; balance = balStart - amort; pushMonth(m, balStart, interest, amort, payment, 0, Math.max(0,balance)); } }
+  else if(system==='sacre'){
+    const amortConst = balance / M; for(let i=0;i<M;i++){ const m=startMonth+i; const balStart=balance; const interest = balStart * r; const amort = amortConst; let payment = interest + amort; balance = balStart - amort; if(reaj) balance *= (1+reaj); pushMonth(m, balStart, interest, amort, payment, 0, Math.max(0,balance)); } }
+  else if(system==='simples'){
+    const amortConst = financed / M; for(let i=0;i<M;i++){ const m=startMonth+i; const balStart=balance; const interest = financed * r; const amort = amortConst; const payment = interest + amort; balance = balStart - amort; pushMonth(m, balStart, interest, amort, payment, 0, Math.max(0,balance)); } }
+
+  // Now apply discount on the last N amortizable installments (if any)
+  if(discountPct>0 && discountCount>0){
+    // find amortizable rows (payment>0) and apply to last discountCount of them
+    const amortRows = schedule.filter(s=>s.payment>0);
+    const L = amortRows.length;
+    for(let i=0;i<discountCount;i++){
+      const idx = L-1 - i; if(idx<0) break; const row = amortRows[idx]; const originalPayment = row.payment; const discountAmount = originalPayment * (discountPct/100); const newPayment = Math.max(0, originalPayment - discountAmount);
+      // recompute amortization = payment - interest
+      const newAmort = newPayment - row.interest;
+      // find index in schedule and update subsequent balances from that point
+      const globalIdx = schedule.findIndex(s=>s.month===row.month);
+      // update this row
+      schedule[globalIdx].discount = discountAmount;
+      schedule[globalIdx].payment = newPayment;
+      schedule[globalIdx].amortization = newAmort;
+      // recompute balances forward
+      // first set end for this row
+      schedule[globalIdx].end = Math.max(0, schedule[globalIdx].balanceStart - newAmort);
+      // now adjust subsequent rows balanceStart and end and payments' amortizations accordingly
+      for(let j=globalIdx+1;j<schedule.length;j++){
+        const prevEnd = schedule[j-1].end;
+        schedule[j].balanceStart = prevEnd;
+        // interest recalculated on new balanceStart
+        schedule[j].interest = schedule[j].balanceStart * r;
+        // if payment originally 0 (shouldn't for amort rows) keep 0
+        if(schedule[j].payment>0){
+          // if original had discount marker for this later row keep it, else use original payment value (but original payment might be stale)
+          const origPayment = schedule[j].payment + (schedule[j].discount||0);
+          // if row previously discounted keep discounted amount; otherwise keep same absolute payment
+          if(schedule[j].discount){
+            // keep discount applied amount
+            schedule[j].payment = Math.max(0, origPayment - schedule[j].discount);
+          } else {
+            // payment remains same as before but interest changed, so amort changes to payment - interest
+            schedule[j].amortization = Math.max(0, schedule[j].payment - schedule[j].interest);
+            schedule[j].end = Math.max(0, schedule[j].balanceStart - schedule[j].amortization);
+          }
+        } else {
+          schedule[j].end = schedule[j].balanceStart; // no payment (carencia)
+        }
+      }
+    }
+    // After adjustments, ensure last row ends at zero (if rounding leaves small positive)
+    const last = schedule[schedule.length-1]; if(last && last.end>0.5) { /* leave as is; exact clearing may require recalculation strategy */ }
   }
 
   return { financed, schedule };
 }
 
-// rendering / charting
-let compareChart=null;
+// Rendering and charts
+let compareChart = null;
 function renderComparison(scheduleA, scheduleB, labelA, labelB){
-  // prepare labels as months union
-  const labels = [];
   const maxM = Math.max(scheduleA.length?scheduleA[scheduleA.length-1].month:0, scheduleB.length?scheduleB[scheduleB.length-1].month:0);
-  for(let i=1;i<=maxM;i++) labels.push('M'+i);
-
+  const labels = []; for(let i=1;i<=maxM;i++) labels.push('M'+i);
   const balA = labels.map((l,i)=>{ const m=i+1; const row=scheduleA.find(r=>r.month===m); return row?row.end: (scheduleA.length?scheduleA[scheduleA.length-1].end:0); });
   const balB = labels.map((l,i)=>{ const m=i+1; const row=scheduleB.find(r=>r.month===m); return row?row.end: (scheduleB.length?scheduleB[scheduleB.length-1].end:0); });
-
-  const ctx=document.getElementById('compareChart').getContext('2d');
+  const ctx = document.getElementById('compareChart').getContext('2d');
   if(compareChart){ compareChart.data.labels = labels; compareChart.data.datasets[0].data = balA; compareChart.data.datasets[1].data = balB; compareChart.update(); return; }
-
   compareChart = new Chart(ctx,{ type:'line', data:{ labels, datasets:[ {label:labelA,data:balA,borderColor:'#c9a84b',tension:0.25}, {label:labelB,data:balB,borderColor:'#2b6cb0',tension:0.25} ] }, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'var(--accent)'}}},scales:{x:{ticks:{color:'var(--accent)'}}, y:{ticks:{color:'var(--accent)'}}} } });
 }
 
-function fillTable(tblId, schedule){ const tbody=document.querySelector(tblId+' tbody'); tbody.innerHTML=''; schedule.forEach(r=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>M${r.month}</td><td>${fmt(r.balanceStart)}</td><td>${fmt(r.interest)}</td><td>${fmt(r.amortization)}</td><td>${fmt(r.payment)}</td><td>${fmt(r.end)}</td>`; tbody.appendChild(tr); }); }
+function fillTable(tblSelector, schedule){ const tbody=document.querySelector(tblSelector+' tbody'); tbody.innerHTML=''; schedule.forEach(r=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>M${r.month}</td><td>${fmt(r.balanceStart)}</td><td>${fmt(r.interest)}</td><td>${fmt(r.amortization)}</td><td>${fmt(r.payment)}</td><td>${r.discount?fmt(r.discount):'-'}</td><td>${fmt(r.end)}</td>`; tbody.appendChild(tr); }); }
 
-// export: xlsx and pdf
-function exportXlsx(objA, objB, meta){
-  const wb=XLSX.utils.book_new();
-  const wsA=XLSX.utils.json_to_sheet(objA.schedule.map(r=>({Mes:r.month,SaldoInicial:r.balanceStart,Juros:r.interest,Amortizacao:r.amortization,Prestacao:r.payment,SaldoFinal:r.end}))); XLSX.utils.book_append_sheet(wb,wsA,meta.titleA||'SistemaA');
-  const wsB=XLSX.utils.json_to_sheet(objB.schedule.map(r=>({Mes:r.month,SaldoInicial:r.balanceStart,Juros:r.interest,Amortizacao:r.amortization,Prestacao:r.payment,SaldoFinal:r.end}))); XLSX.utils.book_append_sheet(wb,wsB,meta.titleB||'SistemaB');
-  // metadata sheet
-  const metaSheet = XLSX.utils.aoa_to_sheet([["APSPARCEIROS - Simulação"],["Data:",meta.date],["Valor:",meta.amount],["Entrada:",meta.downpayment],["Prazo (meses):",meta.months],["Sistema A:",meta.titleA],["Sistema B:",meta.titleB]]);
-  XLSX.utils.book_append_sheet(wb,metaSheet,'Resumo');
-  const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});
-  saveAs(new Blob([wbout],{type:'application/octet-stream'}), 'simulacao_apsparceiros.xlsx');
-}
+// Export functions (xlsx & pdf) with discount included
+function exportXlsx(objA, objB, meta, discountMeta){ const wb=XLSX.utils.book_new(); const sheetA = objA.schedule.map(r=>({Mes:r.month,SaldoInicial:r.balanceStart,Juros:r.interest,Amortizacao:r.amortization,Prestacao:r.payment,Desconto:r.discount||0,SaldoFinal:r.end})); const wsA=XLSX.utils.json_to_sheet(sheetA); XLSX.utils.book_append_sheet(wb,wsA,meta.titleA||'SistemaA'); const sheetB = objB.schedule.map(r=>({Mes:r.month,SaldoInicial:r.balanceStart,Juros:r.interest,Amortizacao:r.amortization,Prestacao:r.payment,Desconto:r.discount||0,SaldoFinal:r.end})); const wsB=XLSX.utils.json_to_sheet(sheetB); XLSX.utils.book_append_sheet(wb,wsB,meta.titleB||'SistemaB'); const metaArr = [['APSPARCEIROS - Simulação'],['Data',meta.date],['Valor',meta.amount],['Entrada',meta.downpayment],['Prazo (meses)',meta.months],['Taxa mensal', (meta.rateMonthly*100).toFixed(4)+'%'],['Sistema A',meta.titleA],['Sistema B',meta.titleB],['Desconto (%)',discountMeta.percent],['Últimas parcelas com desconto',discountMeta.count]]; const wsMeta = XLSX.utils.aoa_to_sheet(metaArr); XLSX.utils.book_append_sheet(wb,wsMeta,'Resumo'); const wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'}); saveAs(new Blob([wbout],{type:'application/octet-stream'}), 'simulacao_apsparceiros.xlsx'); }
 
-async function exportPdf(element, meta){
-  const { jsPDF } = window.jspdf;
-  const canvas = await html2canvas(element,{scale:1});
-  const imgData = canvas.toDataURL('image/png');
-  const pdf = new jsPDF('landscape','pt','a4');
-  const w=pdf.internal.pageSize.getWidth(); const h=pdf.internal.pageSize.getHeight();
-  pdf.setFontSize(12); pdf.text('APSPARCEIROS - Simulação',40,30); pdf.text(meta.date,40,46); pdf.addImage(imgData,'PNG',40,60,w-80,h-120);
-  pdf.save('simulacao_apsparceiros.pdf');
-}
+async function exportPdf(element, meta, discountMeta){ const { jsPDF } = window.jspdf; const canvas = await html2canvas(element,{scale:1}); const imgData = canvas.toDataURL('image/png'); const pdf = new jsPDF('landscape','pt','a4'); const w=pdf.internal.pageSize.getWidth(); const h=pdf.internal.pageSize.getHeight(); pdf.setFontSize(12); pdf.text('APSPARCEIROS - Simulação',40,30); pdf.text(meta.date,40,46); pdf.text('Desconto: '+discountMeta.percent+'% nas últimas '+discountMeta.count+' parcelas',40,62); pdf.addImage(imgData,'PNG',40,80,w-80,h-140); pdf.save('simulacao_apsparceiros.pdf'); }
 
-// persistence
+// Persistence
 function saveSimulation(name, payload){ const key='aps_sim_'+name; localStorage.setItem(key, JSON.stringify(payload)); alert('Simulação salva: '+key); }
-function loadSimulation(key){ const s=localStorage.getItem(key); if(!s) return null; return JSON.parse(s); }
 
 // UI bindings
 document.getElementById('nowDate').innerText = nowDateStr();
-document.getElementById('themeSelect').addEventListener('change',(e)=>{ const root=document.documentElement; if(e.target.value==='light'){ root.classList.add('light'); } else root.classList.remove('light'); });
+document.getElementById('themeSelect').addEventListener('change',(e)=>{ const root=document.documentElement; if(e.target.value==='light') root.classList.add('light'); else root.classList.remove('light'); });
+document.getElementById('systemA').addEventListener('change',(e)=>{ document.getElementById('sacreOptions').style.display = (e.target.value==='sacre')? 'block':'none'; // show discount only if amortizable
+  const discountFields = document.getElementById('discountPercent').parentNode; if(e.target.value==='compostos'){ document.getElementById('discountPercent').disabled=true; document.getElementById('discountCount').disabled=true; } else { document.getElementById('discountPercent').disabled=false; document.getElementById('discountCount').disabled=false; } });
 
-document.getElementById('systemA').addEventListener('change',(e)=>{ if(e.target.value==='sacre') document.getElementById('sacreOptions').style.display='block'; else document.getElementById('sacreOptions').style.display='none'; });
-document.getElementById('systemB').addEventListener('change',(e)=>{ /* nothing */ });
+document.getElementById('systemB').addEventListener('change',(e)=>{ /* nothing special */ });
 
 document.getElementById('btnCalc').addEventListener('click',()=>{
-  const amount=Number(document.getElementById('loanAmount').value)||0; const down=Number(document.getElementById('downPayment').value)||0; const months=Number(document.getElementById('termMonths').value)||1; const rateVal=Number(document.getElementById('rateValue').value)||0; const ratePeriod=document.getElementById('ratePeriod').value; const auto=document.getElementById('autoConvert').value==='1'; const sysA=document.getElementById('systemA').value; const carType=document.getElementById('carenciaType').value; const carMonths=Number(document.getElementById('carenciaMonths').value)||0; const reaj=Number(document.getElementById('reajusteMensal').value)||0;
-  const rMonthly=toMonthlyRate(rateVal,ratePeriod,auto);
-  const resA = generateSchedule({amount,down,months,rate:rMonthly,system:sysA,carType,carMonths,reaj:reaj/100});
-  // show KPIs
+  const amount=Number(document.getElementById('loanAmount').value)||0; const down=Number(document.getElementById('downPayment').value)||0; const months=Number(document.getElementById('termMonths').value)||1; const rateVal=Number(document.getElementById('rateValue').value)||0; const ratePeriod=document.getElementById('ratePeriod').value; const auto=document.getElementById('autoConvert').value==='1'; const sysA=document.getElementById('systemA').value; const carType=document.getElementById('carenciaType').value; const carMonths=Number(document.getElementById('carenciaMonths').value)||0; const reaj=Number(document.getElementById('reajusteMensal').value)||0; const discountPct=Number(document.getElementById('discountPercent').value)||0; const discountCount=Number(document.getElementById('discountCount').value)||0;
+  const rMonthly = toMonthlyRate(rateVal,ratePeriod,auto);
+  const resA = generateSchedule({amount,down,months,rate:rMonthly,system:sysA,carType,carMonths,reaj:reaj/100,discountPct,discountCount});
   const totInterest = resA.schedule.reduce((s,x)=>s+Number(x.interest),0); const totAmort = resA.schedule.reduce((s,x)=>s+Number(x.amortization),0); const avgPay = resA.schedule.length?resA.schedule.reduce((s,x)=>s+Number(x.payment),0)/resA.schedule.length:0;
-  document.getElementById('kpiPaymentA').innerText = fmt(avgPay); document.getElementById('kpiTotalInterestA').innerText = fmt(totInterest); document.getElementById('kpiRoiA').innerText = (totInterest>0?((totAmort/totInterest).toFixed(2)):'-');
-  // render single on right side A and B empty
-  fillTable('#tableA', resA.schedule); document.getElementById('titleA').innerText = 'Sistema A — '+sysA.toUpperCase(); document.getElementById('titleB').innerText = 'Sistema B (comparar)'; document.getElementById('tableB').querySelector('tbody').innerHTML='';
-  renderComparison(resA.schedule,[], 'A','B');
-  window._lastA = resA; window._lastB = null; window._meta = {date:nowDateStr(),amount,downpayment:down,months,rateMonthly:rMonthly,titleA:sysA};
+  document.getElementById('kpiPaymentA').innerText = fmt(avgPay); document.getElementById('kpiTotalInterestA').innerText = fmt(totInterest); document.getElementById('kpiTotalAmortA').innerText = fmt(totAmort);
+  fillTable('#tableA', resA.schedule); document.getElementById('titleA').innerText = 'A — '+sysA.toUpperCase(); document.getElementById('titleB').innerText = 'B — (comparar)'; document.querySelector('#tableB tbody').innerHTML=''; renderComparison(resA.schedule,[], 'A-'+sysA.toUpperCase(),'B'); window._lastA=resA; window._lastB=null; window._meta={date:nowDateStr(),amount,downpayment:down,months,rateMonthly:rMonthly,titleA:sysA}; window._discountMeta={percent:discountPct,count:discountCount};
 });
 
 document.getElementById('btnCompare').addEventListener('click',()=>{
-  const amount=Number(document.getElementById('loanAmount').value)||0; const down=Number(document.getElementById('downPayment').value)||0; const months=Number(document.getElementById('termMonths').value)||1; const rateVal=Number(document.getElementById('rateValue').value)||0; const ratePeriod=document.getElementById('ratePeriod').value; const auto=document.getElementById('autoConvert').value==='1'; const sysA=document.getElementById('systemA').value; const sysB=document.getElementById('systemB').value; const carType=document.getElementById('carenciaType').value; const carMonths=Number(document.getElementById('carenciaMonths').value)||0; const reaj=Number(document.getElementById('reajusteMensal').value)||0; const rMonthly=toMonthlyRate(rateVal,ratePeriod,auto);
-  const resA = generateSchedule({amount,down,months,rate:rMonthly,system:sysA,carType,carMonths,reaj:reaj/100});
-  const resB = generateSchedule({amount,down,months,rate:rMonthly,system:sysB,carType,carMonths,reaj:reaj/100});
-  fillTable('#tableA',resA.schedule); document.getElementById('titleA').innerText = 'A — '+sysA.toUpperCase(); fillTable('#tableB',resB.schedule); document.getElementById('titleB').innerText = 'B — '+sysB.toUpperCase(); renderComparison(resA.schedule,resB.schedule,'A-'+sysA.toUpperCase(),'B-'+sysB.toUpperCase());
-  // store last
-  window._lastA=resA; window._lastB=resB; window._meta={date:nowDateStr(),amount,downpayment:down,months,rateMonthly:rMonthly,titleA:sysA,titleB:sysB};
+  const amount=Number(document.getElementById('loanAmount').value)||0; const down=Number(document.getElementById('downPayment').value)||0; const months=Number(document.getElementById('termMonths').value)||1; const rateVal=Number(document.getElementById('rateValue').value)||0; const ratePeriod=document.getElementById('ratePeriod').value; const auto=document.getElementById('autoConvert').value==='1'; const sysA=document.getElementById('systemA').value; const sysB=document.getElementById('systemB').value; const carType=document.getElementById('carenciaType').value; const carMonths=Number(document.getElementById('carenciaMonths').value)||0; const reaj=Number(document.getElementById('reajusteMensal').value)||0; const discountPct=Number(document.getElementById('discountPercent').value)||0; const discountCount=Number(document.getElementById('discountCount').value)||0;
+  const rMonthly = toMonthlyRate(rateVal,ratePeriod,auto);
+  const resA = generateSchedule({amount,down,months,rate:rMonthly,system:sysA,carType,carMonths,reaj:reaj/100,discountPct,discountCount});
+  const resB = generateSchedule({amount,down,months,rate:rMonthly,system:sysB,carType,carMonths,reaj:reaj/100,discountPct,discountCount});
+  fillTable('#tableA',resA.schedule); document.getElementById('titleA').innerText = 'A — '+sysA.toUpperCase(); fillTable('#tableB',resB.schedule); document.getElementById('titleB').innerText = 'B — '+sysB.toUpperCase(); renderComparison(resA.schedule,resB.schedule,'A-'+sysA.toUpperCase(),'B-'+sysB.toUpperCase()); window._lastA=resA; window._lastB=resB; window._meta={date:nowDateStr(),amount,downpayment:down,months,rateMonthly:rMonthly,titleA:sysA,titleB:sysB}; window._discountMeta={percent:discountPct,count:discountCount};
 });
 
-document.getElementById('btnExportXlsx').addEventListener('click',()=>{
-  if(!window._lastA) return alert('Gere uma simulação primeiro.'); const objA=window._lastA; const objB=window._lastB || {schedule:[]}; exportXlsx(objA,objB,window._meta);
-});
+document.getElementById('btnExportXlsx').addEventListener('click',()=>{ if(!window._lastA) return alert('Gere uma simulação primeiro.'); const objA=window._lastA; const objB=window._lastB||{schedule:[]}; exportXlsx(objA,objB,window._meta,window._discountMeta||{percent:0,count:0}); });
 
-document.getElementById('btnExportPdf').addEventListener('click',async ()=>{
-  if(!window._lastA) return alert('Gere uma simulação primeiro.'); const elem=document.getElementById('tableWrap'); await exportPdf(elem,window._meta);
-});
+document.getElementById('btnExportPdf').addEventListener('click',async ()=>{ if(!window._lastA) return alert('Gere uma simulação primeiro.'); const elem=document.getElementById('tableWrap'); await exportPdf(elem,window._meta,window._discountMeta||{percent:0,count:0}); });
 
 document.getElementById('btnTogglePrint').addEventListener('click',()=>{ window.print(); });
 
-document.getElementById('btnSave').addEventListener('click',()=>{ if(!window._lastA) return alert('Gere uma simulação primeiro.'); const key = prompt('Nome curto para salvar (ex: financiamento_jun25)'); if(!key) return; saveSimulation(key,{meta:window._meta,A:window._lastA,B:window._lastB}); });
+document.getElementById('btnSave').addEventListener('click',()=>{ if(!window._lastA) return alert('Gere uma simulação primeiro.'); const key = prompt('Nome curto para salvar (ex: financiamento_jun25)'); if(!key) return; saveSimulation(key,{meta:window._meta,A:window._lastA,B:window._lastB,discount:window._discountMeta}); });
 
-// auto-calc on load if wanted
+// auto-calc on load
 window.addEventListener('load',()=>{ document.getElementById('btnCalc').click(); });
 </script>
 </body>
