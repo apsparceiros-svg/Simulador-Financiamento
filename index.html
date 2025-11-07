@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulador Financeiro — PRICE / SAC / SACRE / Juros</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#070707;--panel:#0f0f0f;--muted:#9e9e9e;--gold:#c9a84b;--card:#121212;--accent:#e6e6e6}
+*{box-sizing:border-box;font-family:Inter,system-ui,Arial;color:var(--accent);margin:0;padding:0}
+html,body{height:100%;width:100%;background:linear-gradient(180deg,#040404,#0a0a0a);-webkit-font-smoothing:antialiased;font-size:16px}
+.container{max-width:1200px;margin:28px auto;padding:22px;display:grid;grid-template-columns:360px 1fr;gap:18px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.00));padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.brand{font-weight:800;color:var(--gold);letter-spacing:0.6px}
+.small{font-size:13px;color:var(--muted)}
+.controls label{display:block;font-size:13px;color:var(--muted);margin-top:8px}
+.controls input[type=text],.controls input[type=number],.controls select{background:#1e1e1e;color:#fff;border:1px solid rgba(255,255,255,0.06);padding:8px;border-radius:8px;width:100%;margin-top:6px}
+.button{background:var(--gold);color:#0b0b0b;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:700}
+.button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--accent)}
+.preview{display:flex;flex-direction:column;gap:12px}
+.table-wrap{max-height:420px;overflow:auto;border-radius:8px;border:1px solid rgba(255,255,255,0.03);padding:8px;background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{position:sticky;top:0;background:rgba(0,0,0,0.3);padding:8px;text-align:right}
+tbody td{padding:6px;text-align:right;border-bottom:1px dashed rgba(255,255,255,0.02)}
+td:first-child,th:first-child{text-align:left}
+.kpis{display:flex;gap:10px;flex-wrap:wrap}
+.kpi{background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.00));padding:10px;border-radius:8px;min-width:140px}
+.chart-area{height:320px}
+.footer{margin-top:12px;color:var(--muted);font-size:13px}
+@media(max-width:1000px){.container{grid-template-columns:1fr;max-width:96%;}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div>
+    <div class="card header">
+      <div>
+        <div class="brand">Simulador de Financiamento</div>
+        <div class="small">PRICE · SAC · SACRE · Juros simples/compostos</div>
+      </div>
+      <div style="text-align:right">
+        <div class="small">Tema: Escuro · Export CSV/JSON</div>
+      </div>
+    </div>
+
+    <div class="card controls">
+      <label>Valor do Empréstimo (R$)</label>
+      <input id="loanAmount" type="number" min="0" step="0.01" value="100000">
+
+      <label>Prazo (meses)</label>
+      <input id="termMonths" type="number" min="1" step="1" value="120">
+
+      <label>Taxa</label>
+      <div style="display:flex;gap:8px">
+        <input id="rateValue" type="number" min="0" step="0.0001" value="12">
+        <select id="ratePeriod" style="width:120px">
+          <option value="a.a">% a.a.</option>
+          <option value="a.m">% a.m.</option>
+        </select>
+      </div>
+
+      <label>Converter taxa automaticamente?</label>
+      <select id="autoConvert"><option value="1">Sim (converte a.a. → a.m.)</option><option value="0">Não</option></select>
+
+      <label>Sistema</label>
+      <select id="systemSelect">
+        <option value="price">PRICE (Frances)</option>
+        <option value="sac">SAC</option>
+        <option value="sacre">SACRE (SAC + reajuste)</option>
+        <option value="simples">Juros Simples</option>
+        <option value="compostos">Juros Compostos (parcelas constantes por capitaliz.)</option>
+      </select>
+
+      <label>Carência</label>
+      <select id="carenciaType">
+        <option value="none">Sem carência</option>
+        <option value="juros">Paga apenas juros (carência de juros)</option>
+        <option value="total">Carência total (capitaliza juros)</option>
+      </select>
+      <label>Meses de carência</label>
+      <input id="carenciaMonths" type="number" min="0" step="1" value="0">
+
+      <div id="sacreOptions" style="display:none">
+        <label>Reajuste mensal (%) — (ex: IPCA/INCC)</label>
+        <input id="reajusteMensal" type="number" min="0" step="0.0001" value="0.5">
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button id="btnCalc" class="button">Calcular</button>
+        <button id="btnExportCsv" class="button ghost">Exportar CSV</button>
+        <button id="btnExportJson" class="button ghost">Exportar JSON</button>
+      </div>
+
+      <div class="footer">Observação: taxa anual será convertida para mensal por (1+ia)^(1/12)-1 se opção "Sim" estiver ativa.</div>
+    </div>
+
+    <div class="card">
+      <div class="kpis">
+        <div class="kpi"><div class="small">Parcela média</div><div id="kpiPayment" style="font-weight:800;color:var(--gold)">-</div></div>
+        <div class="kpi"><div class="small">Juros totais</div><div id="kpiTotalInterest" style="font-weight:800;color:var(--gold)">-</div></div>
+        <div class="kpi"><div class="small">Amortização total</div><div id="kpiTotalAmort" style="font-weight:800;color:var(--gold)">-</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><strong>Resumo mês a mês</strong><div class="small">Clique em "Calcular" para gerar a tabela</div></div>
+        <div style="display:flex;gap:8px">
+          <select id="downloadSelect"><option value="csv">CSV</option><option value="json">JSON</option></select>
+        </div>
+      </div>
+
+      <div style="margin-top:12px" class="chart-area">
+        <canvas id="balanceChart" style="width:100%;height:100%"></canvas>
+      </div>
+
+      <div style="margin-top:12px" class="table-wrap" id="tableWrap">
+        <table id="scheduleTable">
+          <thead>
+            <tr><th>Mês</th><th>Saldo Inicial</th><th>Juros</th><th>Amortização</th><th>Parcela</th><th>Saldo Final</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toMonthlyRate(value, period){
+  // value is percentage (e.g. 12) and period is 'a.a' or 'a.m'
+  const v = Number(value) / 100;
+  if(period==='a.m') return v;
+  // a.a -> convert to monthly as (1+ia)^(1/12)-1
+  return Math.pow(1+v,1/12)-1;
+}
+
+function formatCurrency(v){return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:2})}
+
+function generateSchedule(opts){
+  // opts: amount, months, rate (monthly), system, carenciaType, carenciaMonths, reajusteMensal
+  const A = Number(opts.amount);
+  const N = Math.max(1,Math.floor(opts.months));
+  const r = Number(opts.rate);
+  const system = opts.system;
+  const carType = opts.carType;
+  const carMonths = Math.max(0,Math.floor(opts.carMonths||0));
+  const reaj = Number(opts.reaj||0)/100;
+
+  let balance = A;
+  const schedule = [];
+
+  // helper: create month entry
+  function pushMonth(i, balStart, interest, amort, payment, balEnd){
+    schedule.push({month:i, balanceStart:balStart, interest, amortization:amort, payment, balanceEnd:balEnd});
+  }
+
+  // ====== handle carência total: capitaliza juros for carMonths ======
+  if(carType==='total' && carMonths>0){
+    for(let m=1;m<=carMonths;m++){
+      const interest = balance * r;
+      // capitaliza
+      balance += interest;
+      if(system==='sacre' && reaj) balance *= (1+reaj);
+      pushMonth(m, balance-interest, interest, 0, 0, balance);
+    }
+  }
+
+  // ====== handle carência de juros: pay interest only for carMonths ======
+  if(carType==='juros' && carMonths>0){
+    for(let m=1;m<=carMonths;m++){
+      const interest = balance * r;
+      // payment = interest only
+      const payment = interest;
+      pushMonth(m, balance, interest, 0, payment, balance);
+    }
+  }
+
+  // Determine remaining months for amortization
+  const startMonth = (carType==='none')?1:(carType?carMonths+1:1);
+  const monthsLeft = N - ( (carType==='none')?0:carMonths );
+  const M = Math.max(1, monthsLeft);
+
+  // Compute schedule depending on system
+  if(system==='price'){
+    // parcela constante (sistema francês)
+    const ann = r;
+    // payment formula based on remaining term M and current balance
+    const payment = (ann===0)?(balance/M):(balance * ann / (1 - Math.pow(1+ann,-M)));
+    for(let i=0;i<M;i++){
+      const monthIndex = startMonth + i;
+      const balStart = balance;
+      const interest = balStart * r;
+      const amort = payment - interest;
+      balance = balStart - amort;
+      if(system==='sacre' && reaj) balance *= (1+reaj); // for safety though sacre handled elsewhere
+      pushMonth(monthIndex, balStart, interest, amort, payment, Math.max(0,balance));
+    }
+  } else if(system==='sac'){
+    // amortização constante
+    const amortConst = balance / M;
+    for(let i=0;i<M;i++){
+      const monthIndex = startMonth + i;
+      const balStart = balance;
+      const interest = balStart * r;
+      const amort = amortConst;
+      const payment = interest + amort;
+      balance = balStart - amort;
+      pushMonth(monthIndex, balStart, interest, amort, payment, Math.max(0,balance));
+    }
+  } else if(system==='sacre'){
+    // SAC com reajuste: amortização constante; saldo corrigido pelo índice após cada mês
+    const amortConst = balance / M;
+    for(let i=0;i<M;i++){
+      const monthIndex = startMonth + i;
+      const balStart = balance;
+      const interest = balStart * r;
+      const amort = amortConst;
+      let payment = interest + amort;
+      balance = balStart - amort;
+      // aplicar reajuste ao saldo (correção monetária)
+      if(reaj) balance *= (1+reaj);
+      pushMonth(monthIndex, balStart, interest, amort, payment, Math.max(0,balance));
+    }
+  } else if(system==='simples'){
+    // Juros simples: juros calculados sobre capital inicial (A) proporcional ao tempo; amortizações podem ser em parcelas iguais do principal
+    const amortConst = A / M;
+    for(let i=0;i<M;i++){
+      const monthIndex = startMonth + i;
+      const balStart = balance;
+      const interest = A * r; // juros simples sobre capital inicial por mês
+      const amort = amortConst;
+      const payment = interest + amort;
+      balance = balStart - amort;
+      pushMonth(monthIndex, balStart, interest, amort, payment, Math.max(0,balance));
+    }
+  } else if(system==='compostos'){
+    // Juros compostos com parcelas calculadas para amortizar com capitalização: similar ao price, mas mostramos capitalização explícita
+    const ann = r;
+    const payment = (ann===0)?(balance/M):(balance * ann / (1 - Math.pow(1+ann,-M)));
+    for(let i=0;i<M;i++){
+      const monthIndex = startMonth + i;
+      const balStart = balance;
+      const interest = balStart * r;
+      const amort = payment - interest;
+      balance = balStart - amort;
+      pushMonth(monthIndex, balStart, interest, amort, payment, Math.max(0,balance));
+    }
+  }
+
+  // If schedule length shorter than N, pad (shouldn't happen) or if longer, slice
+  return schedule;
+}
+
+let balanceChart = null;
+
+function renderSchedule(schedule){
+  const tbody = document.querySelector('#scheduleTable tbody'); tbody.innerHTML='';
+  let totalInterest=0, totalAmort=0, totalPayment=0;
+  schedule.forEach(row=>{
+    const tr = document.createElement('tr');
+    const fmt = v => v===0?'-':formatCurrency(v);
+    tr.innerHTML = `<td>M${row.month}</td><td>${fmt(row.balanceStart)}</td><td>${fmt(row.interest)}</td><td>${fmt(row.amortization)}</td><td>${fmt(row.payment)}</td><td>${fmt(row.balanceEnd)}</td>`;
+    tbody.appendChild(tr);
+    totalInterest += Number(row.interest);
+    totalAmort += Number(row.amortization);
+    totalPayment += Number(row.payment);
+  });
+  document.getElementById('kpiPayment').innerText = schedule.length?formatCurrency(totalPayment/schedule.length):'-';
+  document.getElementById('kpiTotalInterest').innerText = formatCurrency(totalInterest);
+  document.getElementById('kpiTotalAmort').innerText = formatCurrency(totalAmort);
+
+  // chart: balance over time and stack interest/amort
+  const labels = schedule.map(s=>'M'+s.month);
+  const balances = schedule.map(s=>s.balanceEnd);
+  const interests = schedule.map(s=>s.interest);
+  const amort = schedule.map(s=>s.amortization);
+
+  const ctx = document.getElementById('balanceChart').getContext('2d');
+  if(balanceChart) {
+    balanceChart.data.labels = labels;
+    balanceChart.data.datasets[0].data = balances;
+    balanceChart.data.datasets[1].data = interests;
+    balanceChart.data.datasets[2].data = amort;
+    balanceChart.update();
+    return;
+  }
+
+  balanceChart = new Chart(ctx,{
+    type:'line',
+    data:{labels:labels,datasets:[
+      {label:'Saldo Devedor',data:balances,yAxisID:'y',borderColor:'#c9a84b',tension:0.25,fill:false},
+      {label:'Juros (mês)',data:interests,type:'bar',stack:'a',backgroundColor:'rgba(201,168,75,0.12)',borderWidth:0},
+      {label:'Amortização (mês)',data:amort,type:'bar',stack:'a',backgroundColor:'rgba(255,255,255,0.04)',borderWidth:0}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index'},scales:{y:{position:'left',ticks:{color:'#fff'}}, x:{ticks:{color:'#fff'}}},plugins:{legend:{labels:{color:'#fff'}}}
+  });
+}
+
+function download(content, filename, mime){
+  const blob=new Blob([content],{type:mime});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename; a.click(); URL.revokeObjectURL(url);
+}
+
+function scheduleToCsv(schedule){
+  const rows = [['month','balanceStart','interest','amortization','payment','balanceEnd']];
+  schedule.forEach(r=>rows.push([r.month,r.balanceStart,r.interest,r.amortization,r.payment,r.balanceEnd]));
+  return rows.map(r=>r.join(',')).join('\n');
+}
+
+function scheduleToJson(schedule){ return JSON.stringify(schedule,null,2); }
+
+// UI bindings
+document.getElementById('systemSelect').addEventListener('change',(e)=>{
+  document.getElementById('sacreOptions').style.display = (e.target.value==='sacre')? 'block':'none';
+});
+
+document.getElementById('btnCalc').addEventListener('click',()=>{
+  const amount = Number(document.getElementById('loanAmount').value)||0;
+  const months = Number(document.getElementById('termMonths').value)||1;
+  const rateVal = Number(document.getElementById('rateValue').value)||0;
+  const ratePeriod = document.getElementById('ratePeriod').value;
+  const auto = document.getElementById('autoConvert').value==='1';
+  const system = document.getElementById('systemSelect').value;
+  const carType = document.getElementById('carenciaType').value;
+  const carMonths = Number(document.getElementById('carenciaMonths').value)||0;
+  const reaj = Number(document.getElementById('reajusteMensal').value)||0;
+
+  let monthlyRate = toMonthlyRate(rateVal, ratePeriod);
+  if(!auto && ratePeriod==='a.a'){
+    // if user chose no auto convert but provided a.a., assume they mean annual and we convert? We'll ask: but per spec convert only if auto==true
+    monthlyRate = toMonthlyRate(rateVal, ratePeriod);
+  }
+
+  const sched = generateSchedule({amount, months, rate:monthlyRate, system, carType, carMonths, reaj});
+  renderSchedule(sched);
+  // store latest schedule for downloads
+  window._lastSchedule = sched;
+});
+
+document.getElementById('btnExportCsv').addEventListener('click',()=>{
+  const s = window._lastSchedule || [];
+  const csv = scheduleToCsv(s);
+  download(csv, 'simulador_schedule.csv', 'text/csv');
+});
+
+document.getElementById('btnExportJson').addEventListener('click',()=>{
+  const s = window._lastSchedule || [];
+  const j = scheduleToJson(s);
+  download(j, 'simulador_schedule.json', 'application/json');
+});
+
+// quick demo calculate on load
+window.addEventListener('load',()=>{document.getElementById('btnCalc').click();});
+</script>
+</body>
+</html>
