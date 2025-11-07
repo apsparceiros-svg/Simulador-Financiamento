@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>APSPARCEIROS — Simulador Bancário v2.1</title>
+<title>APSPARCEIROS — Simulador Bancário v2.2</title>
 
 <!-- libs -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -14,7 +14,7 @@
 
 <style>
 :root{
-  --bg:#070707; --panel:#0f0f0f; --muted:#9e9e9e; --gold:#FFD700; --card:#121212; --accent:#e6e6e6; --glass:rgba(255,255,255,0.035);
+  --bg:#070707; --panel:#141414; --muted:#bdbdbd; --gold:#FFD700; --card:#121212; --accent:#e6e6e6; --glass:rgba(255,255,255,0.03);
   --blue:#00BFFF; --green:#00FF88; --danger:#f44336;
   --maxw:1200px;
 }
@@ -22,43 +22,57 @@
   --bg:#f6f8fb; --panel:#ffffff; --muted:#666; --gold:#C19A00; --card:#fff; --accent:#0b1220; --glass:rgba(11,18,32,0.06);
   --blue:#0078FF; --green:#0b9b5b; --danger:#c62828;
 }
+
 *{box-sizing:border-box;font-family:Inter,system-ui,Arial;color:var(--accent);margin:0;padding:0}
-html,body{height:100%;width:100%;background:linear-gradient(180deg,var(--bg),#090909);-webkit-font-smoothing:antialiased;font-size:15px}
-.app{max-width:var(--maxw);margin:18px auto;padding:14px;display:flex;flex-direction:column;gap:12px}
-.header{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(180deg,var(--panel),rgba(255,255,255,0.01));padding:12px;border-radius:10px;border:1px solid var(--glass)}
+html,body{height:100%;width:100%;background:linear-gradient(180deg,var(--bg),#090909);-webkit-font-smoothing:antialiased;font-size:15px;overflow-y:auto;overflow-x:hidden}
+.app{max-width:var(--maxw);margin:18px auto;padding:12px;display:flex;flex-direction:column;gap:12px}
+
+/* header */
+.header{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(180deg,var(--panel),rgba(255,255,255,0.01));padding:12px;border-radius:10px;border:1px solid rgba(255,215,0,0.06);box-shadow:0 6px 18px rgba(0,0,0,0.5)}
 .brand{display:flex;flex-direction:column}
-.brand h1{font-size:18px;color:var(--gold);text-shadow:0 0 8px rgba(255,215,0,0.08);margin:0}
+.brand h1{font-size:18px;color:var(--gold);text-shadow:0 0 8px rgba(255,215,0,0.06);margin:0}
 .brand .sub{font-size:12px;color:var(--muted);margin-top:4px}
+
 .controls{display:flex;gap:8px;align-items:center}
-.btn{background:var(--gold);color:#0b0b0b;padding:8px 12px;border-radius:8px;border:none;font-weight:700;cursor:pointer}
-.btn.ghost{background:transparent;border:1px solid var(--glass);color:var(--accent)}
-.select,input{background:transparent;color:var(--accent);border:1px solid var(--glass);padding:8px;border-radius:8px}
-.grid{display:grid;grid-template-columns:360px 1fr;gap:12px}
-.panel{background:linear-gradient(180deg,var(--panel),rgba(255,255,255,0.01));padding:12px;border-radius:10px;border:1px solid var(--glass)}
-.left{max-height:78vh;overflow:auto}
+.btn{background:var(--gold);color:#0b0b0b;padding:8px 12px;border-radius:10px;border:none;font-weight:700;cursor:pointer}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--accent);border-radius:10px}
+.select,input{background:#1e1e1e;color:var(--accent);border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px}
+.select.light,input.light{background:#fff;color:#111;border:1px solid #ddd}
+
+/* main grid: parameters + summary, equal height */
+.top-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+.panel{background:var(--panel);padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 18px rgba(0,0,0,0.45);overflow:hidden}
+.left{min-height:220px;max-height:420px;overflow:auto;padding-right:6px}
+.right{min-height:220px;display:flex;flex-direction:column;gap:8px}
+
+/* section */
 .section-title{font-weight:700;color:var(--gold);margin-bottom:8px}
 .small{font-size:13px;color:var(--muted)}
 .form-row{display:flex;gap:8px;margin-top:8px}
 .form-row .col{flex:1}
-.chart-card{height:320px;padding:12px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.00));border:1px solid var(--glass)}
-.kpis{display:flex;gap:10px;align-items:center}
-.kpi{padding:8px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);min-width:150px}
+
+/* chart and tables */
+.chart-card{height:320px;padding:12px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.00));border:1px solid rgba(255,255,255,0.03);box-shadow:none}
+.kpis{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.kpi{padding:8px;border-radius:8px;background:transparent;min-width:150px}
 .kpi .label{font-size:12px;color:var(--muted)}
 .kpi .num{font-weight:800;color:var(--gold)}
-.table-wrap{padding:8px;border-radius:8px;background:var(--card);border:1px solid var(--glass);overflow:auto}
+
+/* table */
+.table-wrap{padding:8px;border-radius:8px;background:var(--card);border:1px solid rgba(255,255,255,0.03);overflow:auto}
 .compare{display:flex;gap:12px;align-items:flex-start;justify-content:center}
 .box{flex:1;min-width:0}
 .table{width:100%;border-collapse:collapse;font-size:13px}
-.table thead th{position:sticky;top:0;padding:8px;text-align:right}
+.table thead th{position:sticky;top:0;padding:8px;text-align:right;background:transparent}
 .table tbody td{padding:8px;text-align:right;border-bottom:1px dashed rgba(255,255,255,0.02)}
-.table th:first-child, .table td:first-child{text-align:left;}
+.table th:first-child, .table td:first-child{text-align:left;padding-left:10px}
 
 /* Tabela A header (dourado) */
-.tableA thead th{background:#2A2A2A;color:var(--gold);border-top:3px solid var(--gold)}
+.tableA thead th{background:#262626;color:var(--gold);border-top:3px solid var(--gold);}
 .tableA thead th.month{background:#333333;color:var(--blue);}
 
 /* Tabela B header (azul royal) */
-.tableB thead th{background:#1E2B3C;color:var(--blue);border-top:3px solid var(--blue)}
+.tableB thead th{background:#112233;color:var(--blue);border-top:3px solid var(--blue);}
 .tableB thead th.month{background:#333333;color:var(--blue);}
 
 /* rows alternate */
@@ -68,16 +82,15 @@ html,body{height:100%;width:100%;background:linear-gradient(180deg,var(--bg),#09
 /* highlighted totals */
 .highlight-value{color:var(--green);font-weight:900}
 
-/* responsive stacking */
-@media(max-width:980px){
-  .grid{grid-template-columns:1fr}
+/* responsive */
+@media(max-width:1000px){
+  .top-grid{grid-template-columns:1fr}
   .compare{flex-direction:column}
   .chart-card{height:240px}
 }
 
-/* avoid horizontal page scroll but allow inner scrolls */
-body{overflow-y:auto;overflow-x:hidden}
-.table-wrap{max-width:100%;overflow-x:auto}
+/* ensure no horizontal scroll from inputs */
+input[type=number], select { min-width:0; width:100%; box-sizing:border-box; }
 
 /* print */
 @media print{
@@ -94,7 +107,7 @@ body{overflow-y:auto;overflow-x:hidden}
   <div class="header no-print">
     <div class="brand">
       <h1>APSPARCEIROS</h1>
-      <div class="sub">Simulador Bancário v2.1 — PRICE · SAC · SACRE · Quitação (real)</div>
+      <div class="sub">Simulador Bancário v2.2 — layout centralizado e refinado</div>
     </div>
 
     <div class="controls">
@@ -110,17 +123,16 @@ body{overflow-y:auto;overflow-x:hidden}
     </div>
   </div>
 
-  <!-- main grid -->
-  <div class="grid">
-    <!-- left panel (inputs) -->
-    <div class="panel left">
+  <!-- top grid: parameters + summary -->
+  <div class="top-grid">
+    <div class="panel left" id="paramsPanel">
       <div class="section-title">Parâmetros</div>
 
       <label class="small">Valor do financiamento (R$)</label>
-      <input id="loanAmount" type="number" value="500000" class="input">
+      <input id="loanAmount" type="number" value="500000">
 
       <label class="small">Entrada (R$)</label>
-      <input id="downPayment" type="number" value="0" class="input">
+      <input id="downPayment" type="number" value="0">
 
       <div class="form-row">
         <div class="col">
@@ -199,7 +211,7 @@ body{overflow-y:auto;overflow-x:hidden}
         <input id="settleDiscountPct" type="number" class="col" placeholder="% negociação" value="0">
       </div>
 
-      <div style="height:6px"></div>
+      <div style="height:8px"></div>
 
       <label class="small">Arredondamento</label>
       <select id="roundMode" class="select"><option value="round">Arredondar</option><option value="trunc">Truncar (banco)</option></select>
@@ -211,57 +223,69 @@ body{overflow-y:auto;overflow-x:hidden}
         <button id="resetBtn" class="btn ghost">Restaurar</button>
       </div>
 
-      <div class="small note" style="margin-top:8px">Tema padrão: escuro/dourado. Em telas pequenas as tabelas empilham verticalmente.</div>
     </div>
 
-    <!-- right panel (results) -->
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div class="section-title">Resumo — Sistema A</div>
-            <div class="small">KPIs e valores chave</div>
-          </div>
-          <div class="kpis">
-            <div class="kpi"><div class="label">Prestação média</div><div id="kpiPaymentA" class="num">-</div></div>
-            <div class="kpi"><div class="label">Juros totais</div><div id="kpiTotalInterestA" class="num" style="color:var(--green)">-</div></div>
-            <div class="kpi"><div class="label">Saldo financiado</div><div id="kpiFinancedA" class="num">-</div></div>
-          </div>
+    <div class="panel right" id="summaryPanel">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div class="section-title">Resumo da Simulação</div>
+          <div class="small">Valores chave e KPIs</div>
+        </div>
+        <div class="small" id="nowDate2"></div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap">
+        <div class="kpi">
+          <div class="label small">Prestação média (A)</div>
+          <div id="kpiPaymentA" class="num" style="color:var(--gold)">-</div>
+        </div>
+        <div class="kpi">
+          <div class="label small">Juros totais (A)</div>
+          <div id="kpiTotalInterestA" class="num" style="color:var(--green)">-</div>
+        </div>
+        <div class="kpi">
+          <div class="label small">Saldo financiado (A)</div>
+          <div id="kpiFinancedA" class="num">-</div>
         </div>
       </div>
 
-      <div class="chart-card panel">
-        <canvas id="mainChart" style="width:100%;height:100%"></canvas>
-      </div>
+      <div style="height:8px"></div>
+      <div class="small">Observações: a quitação antecipada fecha o cronograma no mês indicado e insere linha de quitação com PV descontado.</div>
+    </div>
+  </div>
 
-      <div class="panel table-wrap">
-        <div class="compare" id="compareWrap">
-          <div class="box">
-            <h3 id="titleA" style="color:var(--gold)">A — PRICE</h3>
-            <div style="max-height:360px;overflow:auto">
-              <table id="tableA" class="table tableA">
-                <thead><tr><th class="month">Mês</th><th>Saldo Inicial</th><th>Juros</th><th>Amortização</th><th>Prestação</th><th>Desconto</th><th>Saldo Final</th></tr></thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
+  <!-- chart above tables -->
+  <div class="panel chart-card">
+    <canvas id="mainChart" style="width:100%;height:100%"></canvas>
+  </div>
 
-          <div class="box">
-            <h3 id="titleB" style="color:var(--blue)">B — SAC</h3>
-            <div style="max-height:360px;overflow:auto">
-              <table id="tableB" class="table tableB">
-                <thead><tr><th class="month">Mês</th><th>Saldo Inicial</th><th>Juros</th><th>Amortização</th><th>Prestação</th><th>Desconto</th><th>Saldo Final</th></tr></thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div style="margin-top:12px">
-          <h4>Quitação antecipada</h4>
-          <div id="settleResult" class="small">Nenhuma quitação simulada.</div>
+  <!-- tables -->
+  <div class="panel table-wrap">
+    <div class="compare" id="compareWrap">
+      <div class="box">
+        <h3 id="titleA" style="color:var(--gold)">A — PRICE</h3>
+        <div style="max-height:420px;overflow:auto">
+          <table id="tableA" class="table tableA">
+            <thead><tr><th class="month">Mês</th><th>Saldo Inicial</th><th>Juros</th><th>Amortização</th><th>Prestação</th><th>Desconto</th><th>Saldo Final</th></tr></thead>
+            <tbody></tbody>
+          </table>
         </div>
       </div>
+
+      <div class="box">
+        <h3 id="titleB" style="color:var(--blue)">B — SAC</h3>
+        <div style="max-height:420px;overflow:auto">
+          <table id="tableB" class="table tableB">
+            <thead><tr><th class="month">Mês</th><th>Saldo Inicial</th><th>Juros</th><th>Amortização</th><th>Prestação</th><th>Desconto</th><th>Saldo Final</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px">
+      <h4>Quitação antecipada</h4>
+      <div id="settleResult" class="small">Nenhuma quitação simulada.</div>
     </div>
   </div>
 </div>
@@ -269,6 +293,7 @@ body{overflow-y:auto;overflow-x:hidden}
 <script>
 /* ---- state & helpers ---- */
 document.getElementById('nowDate').innerText = new Date().toLocaleString('pt-BR',{year:'numeric',month:'short',day:'numeric'});
+document.getElementById('nowDate2').innerText = document.getElementById('nowDate').innerText;
 
 let indexSeries = {}; // month->factor
 let mainChart = null;
@@ -300,7 +325,7 @@ function toMonthlyRate(value, period, auto){
   return v/12;
 }
 
-/* core generator with real settlement */
+/* core generator with settlement */
 function generateBankSchedule(opts){
   const round = roundMaker(opts.roundMode || 'round');
   const amount = toNum(opts.amount);
@@ -495,7 +520,7 @@ function fillTable(selector, schedule){
 /* chart render */
 function renderChart(scheduleA, scheduleB, labelA, labelB){
   const maxM = Math.max(scheduleA.length?Math.ceil(scheduleA[scheduleA.length-1].month):0, scheduleB.length?Math.ceil(scheduleB[scheduleB.length-1].month):0);
-  const labels=[]; for(let i=1;i<=maxM;i++) labels.push('M'+i);
+  const labels=[]; for(let i=1;i<=Math.max(24,maxM);i++) labels.push('M'+i);
   const balA = labels.map((l,i)=>{ const m=i+1; const row = scheduleA.find(r=>Math.floor(r.month)===m); return row?row.end:(scheduleA.length?scheduleA[scheduleA.length-1].end:0); });
   const balB = labels.map((l,i)=>{ const m=i+1; const row = scheduleB.find(r=>Math.floor(r.month)===m); return row?row.end:(scheduleB.length?scheduleB[scheduleB.length-1].end:0); });
 
@@ -507,7 +532,7 @@ function renderChart(scheduleA, scheduleB, labelA, labelB){
       { label: labelA, data: balA, borderColor: '#FFD700', tension:0.25, pointRadius:0 },
       { label: labelB, data: balB, borderColor: '#00BFFF', tension:0.25, pointRadius:0 }
     ] },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:'var(--accent)'}}}, scales:{x:{ticks:{color:'var(--accent)'}}, y:{ticks:{color:'var(--accent)'}} } }
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:'var(--accent)'}}}, scales:{x:{ticks:{color:'var(--accent)'}}, y:{ticks:{color:'var(--accent)'}} }
   });
 }
 
@@ -518,9 +543,9 @@ function exportXlsx(objA, objB, meta){
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(sheetA), meta.titleA || 'TabelaA');
   const sheetB = objB.schedule.map(r=>({Mes:r.month,SaldoInicial:r.balanceStart,Juros:r.interest,Amortizacao:r.amortization,Prestacao:r.payment,Desconto:r.discount||0,SaldoFinal:r.end,Nota:r.note||''}));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(sheetB), meta.titleB || 'TabelaB');
-  const metaArr = [['APSPARCEIROS - Simulação v2.1'],['Data',meta.date],['Valor',meta.amount],['Entrada',meta.downpayment],['Prazo',meta.months],['Taxa mensal',(meta.rateMonthly*100).toFixed(6)+'%'],['SistemaA',meta.titleA],['SistemaB',meta.titleB]];
+  const metaArr = [['APSPARCEIROS - Simulação v2.2'],['Data',meta.date],['Valor',meta.amount],['Entrada',meta.downpayment],['Prazo',meta.months],['Taxa mensal',(meta.rateMonthly*100).toFixed(6)+'%'],['SistemaA',meta.titleA],['SistemaB',meta.titleB]];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(metaArr),'Resumo');
-  const out = XLSX.write(wb,{bookType:'xlsx',type:'array'}); saveAs(new Blob([out],{type:'application/octet-stream'}),'simulacao_v2.1.xlsx');
+  const out = XLSX.write(wb,{bookType:'xlsx',type:'array'}); saveAs(new Blob([out],{type:'application/octet-stream'}),'simulacao_v2.2.xlsx');
 }
 function exportCsv(schedule, name){
   const header=['Mes','SaldoInicial','Juros','Amortizacao','Prestacao','Desconto','SaldoFinal','Nota'];
@@ -533,9 +558,9 @@ async function exportPdf(element, meta, settleInfo){
   const canvas = await html2canvas(element,{scale:1});
   const img = canvas.toDataURL('image/png');
   const pdf = new jsPDF('landscape','pt','a4'); const w=pdf.internal.pageSize.getWidth(), h=pdf.internal.pageSize.getHeight();
-  pdf.setFontSize(12); pdf.text('APSPARCEIROS - Simulação v2.1',40,30); pdf.text(meta.date,40,46);
+  pdf.setFontSize(12); pdf.text('APSPARCEIROS - Simulação v2.2',40,30); pdf.text(meta.date,40,46);
   if(settleInfo) pdf.text('Quitação PV='+fmt(settleInfo.pv)+' | Valor negociado='+fmt(settleInfo.settlement),40,62);
-  pdf.addImage(img,'PNG',40,80,w-80,h-140); pdf.save('simulacao_v2.1.pdf');
+  pdf.addImage(img,'PNG',40,80,w-80,h-140); pdf.save('simulacao_v2.2.pdf');
 }
 
 /* calculate */
@@ -617,8 +642,7 @@ document.getElementById('resetBtn').addEventListener('click', ()=> {
 
 /* theme */
 document.getElementById('themeSelect').addEventListener('change', e=>{
-  if(e.target.value==='light') document.documentElement.classList.add('light');
-  else document.documentElement.classList.remove('light');
+  if(e.target.value==='light'){ document.documentElement.classList.add('light'); document.querySelectorAll('input, select').forEach(x=>x.classList.add('light')); } else { document.documentElement.classList.remove('light'); document.querySelectorAll('input, select').forEach(x=>x.classList.remove('light')); }
 });
 
 /* auto-run initial */
