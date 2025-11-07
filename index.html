@@ -19,7 +19,19 @@
 }
 *{box-sizing:border-box;font-family:Inter,system-ui,Arial;color:var(--accent);margin:0;padding:0;}
 html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-font-smoothing:antialiased;}
-.container{max-width:1400px;margin:20px auto;padding:20px;display:grid;grid-template-columns:420px 1fr;gap:20px;}
+
+/* --- CONTAINER RESPONSIVO --- */
+.container{
+  max-width:1400px;
+  margin:20px auto;
+  padding:20px;
+  display:grid;
+  grid-template-columns:1fr 2fr; /* layout flexível: controles + comparação */
+  gap:20px;
+  justify-content:center; /* centraliza o grid */
+}
+
+/* Cards, controles e KPIs */
 .card{background:var(--card);padding:20px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.2);border:1px solid var(--glass);}
 .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
 .brand{font-weight:800;color:var(--gold);font-size:20px;letter-spacing:1px;}
@@ -43,10 +55,31 @@ tbody td{padding:8px;text-align:right;border-bottom:1px dashed rgba(255,255,255,
 td:first-child,th:first-child{text-align:left;}
 tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 .chart-area{height:400px;margin-top:12px;}
-.comparison{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+
+/* Comparativo lado a lado */
+.comparison{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  overflow-x:auto; /* só rola se necessário */
+}
+
+/* Theme toggle */
 .theme-toggle{display:flex;gap:6px;align-items:center;}
-@media(max-width:1100px){.container{grid-template-columns:1fr;}.comparison{grid-template-columns:1fr;}}
+
+/* Footer */
 .footer{margin-top:12px;color:var(--muted);font-size:13px;}
+
+/* --- MEDIA QUERIES RESPONSIVAS --- */
+@media(max-width:1100px){
+  .container{
+    grid-template-columns:1fr; /* uma coluna em telas pequenas */
+    padding:10px;
+  }
+  .comparison{
+    grid-template-columns:1fr; /* tabelas uma abaixo da outra */
+  }
+}
 </style>
 </head>
 <body>
