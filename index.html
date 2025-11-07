@@ -12,43 +12,47 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 :root{
-  --bg:#070707; --panel:#0f0f0f; --muted:#9e9e9e; --gold:#c9a84b; --card:#121212; --accent:#e6e6e6; --glass:rgba(255,255,255,0.03);
+  --bg:#0f1115; --panel:#1a1c23; --muted:#a0a0a0; --gold:#f0b90b; --card:#1f212a; --accent:#f5f5f5; --glass:rgba(255,255,255,0.05);
 }
 :root.light{
-  --bg:#f6f8fb; --panel:#ffffff; --muted:#6b7280; --gold:#2b6cb0; --card:#ffffff; --accent:#0b1220; --glass:rgba(11,18,32,0.04);
+  --bg:#f0f4f8; --panel:#ffffff; --muted:#555; --gold:#2b6cb0; --card:#ffffff; --accent:#0b1220; --glass:rgba(11,18,32,0.05);
 }
-*{box-sizing:border-box;font-family:Inter,system-ui,Arial;color:var(--accent);margin:0;padding:0}
-html,body{height:100%;width:100%;background:linear-gradient(180deg,var(--bg),#0a0a0a);-webkit-font-smoothing:antialiased;font-size:15px}
-.container{max-width:1250px;margin:18px auto;padding:18px;display:grid;grid-template-columns:420px 1fr;gap:16px}
-.card{background:linear-gradient(180deg,var(--panel),rgba(255,255,255,0.01));padding:16px;border-radius:12px;border:1px solid var(--glass)}
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.brand{font-weight:800;color:var(--gold);letter-spacing:0.6px}
-.small{font-size:13px;color:var(--muted)}
-.controls label{display:block;font-size:13px;color:var(--muted);margin-top:8px}
-.controls input[type=text],.controls input[type=number],.controls select{background:transparent;color:var(--accent);border:1px solid var(--glass);padding:10px;border-radius:8px;width:100%;margin-top:6px}
-.button{background:var(--gold);color:#0b0b0b;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:700}
-.button.ghost{background:transparent;border:1px solid var(--glass);color:var(--accent)}
-.table-wrap{max-height:520px;overflow:auto;border-radius:8px;border:1px solid var(--glass);padding:8px;background:var(--card)}
-table{width:100%;border-collapse:collapse;font-size:13px}
-thead th{position:sticky;top:0;background:rgba(0,0,0,0.2);padding:8px;text-align:right}
-tbody td{padding:6px;text-align:right;border-bottom:1px dashed rgba(255,255,255,0.02)}
-td:first-child,th:first-child{text-align:left}
-.kpis{display:flex;gap:10px;flex-wrap:wrap}
-.kpi{background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.00));padding:10px;border-radius:8px;min-width:150px}
-.chart-area{height:360px}
-.footer{margin-top:12px;color:var(--muted);font-size:13px}
-.tooltip{position:relative;display:inline-block}
-.tooltip .tt{visibility:hidden;width:260px;background:var(--panel);color:var(--muted);text-align:left;border-radius:6px;padding:10px;position:absolute;z-index:10;bottom:125%;left:50%;transform:translateX(-50%);opacity:0;transition:opacity .12s}
-.tooltip:hover .tt{visibility:visible;opacity:1}
-.theme-toggle{display:flex;gap:6px;align-items:center}
-.comparison{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media(max-width:1100px){.container{grid-template-columns:1fr}.comparison{grid-template-columns:1fr}}
-.print-area{padding:12px;background:transparent}
-@media print{body{background:#fff;color:#000} .card{box-shadow:none;border:none} .no-print{display:none}}
+*{box-sizing:border-box;font-family:Inter,system-ui,Arial;color:var(--accent);margin:0;padding:0;}
+html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-font-smoothing:antialiased;}
+.container{max-width:1400px;margin:20px auto;padding:20px;display:grid;grid-template-columns:420px 1fr;gap:20px;}
+.card{background:var(--card);padding:20px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.2);border:1px solid var(--glass);}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.brand{font-weight:800;color:var(--gold);font-size:20px;letter-spacing:1px;}
+.small{font-size:13px;color:var(--muted);}
+.controls label{display:block;font-size:13px;color:var(--muted);margin-top:12px;font-weight:500;}
+.controls input[type=text],.controls input[type=number],.controls select{
+  background:var(--panel);color:var(--accent);border:1px solid var(--glass);padding:12px 10px;border-radius:10px;width:100%;margin-top:6px;transition:all 0.2s;
+}
+.controls input:focus,.controls select:focus{border-color:var(--gold);outline:none;box-shadow:0 0 8px var(--gold);}
+.button{background:var(--gold);color:#0b0b0b;border:none;padding:12px 18px;border-radius:10px;cursor:pointer;font-weight:700;transition:all 0.2s;}
+.button:hover{background:#e0a800;}
+.button.ghost{background:transparent;border:1px solid var(--glass);color:var(--accent);}
+.button.ghost:hover{background:var(--glass);}
+.kpis{display:flex;gap:15px;flex-wrap:wrap;margin-top:12px;}
+.kpi{background:var(--panel);padding:15px;border-radius:10px;min-width:160px;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,0.15);}
+.kpi .small{margin-bottom:8px;}
+.table-wrap{max-height:520px;overflow:auto;border-radius:10px;border:1px solid var(--glass);padding:10px;background:var(--panel);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{position:sticky;top:0;background:var(--panel);padding:8px;text-align:right;}
+tbody td{padding:8px;text-align:right;border-bottom:1px dashed rgba(255,255,255,0.05);}
+td:first-child,th:first-child{text-align:left;}
+tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
+.chart-area{height:400px;margin-top:12px;}
+.comparison{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.theme-toggle{display:flex;gap:6px;align-items:center;}
+@media(max-width:1100px){.container{grid-template-columns:1fr;}.comparison{grid-template-columns:1fr;}}
+.footer{margin-top:12px;color:var(--muted);font-size:13px;}
 </style>
 </head>
 <body>
 <div class="container" id="appRoot">
+
+  <!-- CONTROLES E KPIs -->
   <div>
     <div class="card header">
       <div>
@@ -70,13 +74,10 @@ td:first-child,th:first-child{text-align:left}
     <div class="card controls">
       <label>Valor do Financiamento (R$)</label>
       <input id="loanAmount" type="number" min="0" step="0.01" value="500000">
-
       <label>Entrada (R$)</label>
       <input id="downPayment" type="number" min="0" step="0.01" value="0">
-
       <label>Prazo (meses)</label>
       <input id="termMonths" type="number" min="1" step="1" value="240">
-
       <label>Taxa nominal</label>
       <div style="display:flex;gap:8px">
         <input id="rateValue" type="number" min="0" step="0.0001" value="11">
@@ -85,10 +86,8 @@ td:first-child,th:first-child{text-align:left}
           <option value="a.m">% a.m.</option>
         </select>
       </div>
-
       <label>Conversão anual → mensal</label>
       <select id="autoConvert"><option value="1">Sim (geométrica)</option><option value="0">Não (divisão)</option></select>
-
       <label>Sistema A</label>
       <select id="systemA">
         <option value="price">PRICE</option>
@@ -97,7 +96,6 @@ td:first-child,th:first-child{text-align:left}
         <option value="simples">Juros Simples</option>
         <option value="compostos">Juros Compostos (acum.)</option>
       </select>
-
       <label>Sistema B</label>
       <select id="systemB">
         <option value="sac">SAC</option>
@@ -106,26 +104,23 @@ td:first-child,th:first-child{text-align:left}
         <option value="simples">Juros Simples</option>
         <option value="compostos">Juros Compostos (acum.)</option>
       </select>
-
       <label>Correção monetária (SACRE)</label>
       <select id="indexSelect"><option value="none">Nenhuma</option><option value="TR">TR (exemplo)</option><option value="IPCA">IPCA</option><option value="INCC">INCC</option></select>
-
       <label>Carência</label>
       <select id="carenciaType"><option value="none">Sem carência</option><option value="juros">Paga só juros</option><option value="total">Carência total (capitaliza)</option></select>
       <label>Meses de carência</label>
       <input id="carenciaMonths" type="number" min="0" step="1" value="0">
-
       <label>Base de contagem (dias)</label>
       <select id="dayCount"><option value="30/360">30/360</option><option value="actual/360">actual/360</option></select>
 
-      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04);margin:10px 0">
+      <hr style="border:none;border-top:1px solid var(--glass);margin:12px 0">
 
       <label>Desconto nas últimas parcelas (%)</label>
       <input id="discountPercent" type="number" min="0" step="0.01" value="0">
       <label>Quantidade de parcelas com desconto</label>
       <input id="discountCount" type="number" min="0" step="1" value="0">
 
-      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04);margin:10px 0">
+      <hr style="border:none;border-top:1px solid var(--glass);margin:12px 0">
 
       <label>Quitação antecipada</label>
       <div style="display:flex;gap:8px">
@@ -141,15 +136,14 @@ td:first-child,th:first-child{text-align:left}
         <button id="btnCalc" class="button">Calcular (A & B)</button>
         <button id="btnReset" class="button ghost">Restaurar</button>
       </div>
-
       <div style="display:flex;gap:8px;margin-top:8px">
         <button id="btnExportXlsx" class="button ghost">Exportar Excel</button>
         <button id="btnExportPdf" class="button ghost">Gerar PDF</button>
       </div>
-
       <div class="footer">Observação: neste modo a quitação é real — a tabela é encerrada no mês de quitação e uma linha de quitação é inserida com o valor presente descontado.</div>
     </div>
 
+    <!-- KPIs -->
     <div class="card">
       <div class="kpis">
         <div class="kpi"><div class="small">Prestação média (A)</div><div id="kpiPaymentA" style="font-weight:800;color:var(--gold)">-</div></div>
@@ -159,6 +153,7 @@ td:first-child,th:first-child{text-align:left}
     </div>
   </div>
 
+  <!-- COMPARATIVO E TABELAS -->
   <div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -632,5 +627,6 @@ window.addEventListener('load', ()=>{
   setTimeout(()=>document.getElementById('btnCalc').click(), 120);
 });
 </script>
+
 </body>
 </html>
