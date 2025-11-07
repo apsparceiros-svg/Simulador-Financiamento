@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>APSPARCEIROS — Simulador Bancário v2.3</title>
 
-<!-- libs (CDN) -->
+<!-- libs -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
@@ -14,57 +14,51 @@
 
 <style>
 :root{
-  --bg:#070707; --panel:#141414; --muted:#bdbdbd; --gold:#FFD700; --card:#0f0f0f; --accent:#e6e6e6; --glass:rgba(255,255,255,0.03);
-  --blue:#00BFFF; --green:#00FF88; --danger:#f44336;
-  --maxw:1240px;
+  --bg:#070707; --panel:#141414; --muted:#bdbdbd; --gold:#FFD700; --card:#0f0f0f; --accent:#e6e6e6;
+  --blue:#00BFFF; --green:#00FF88; --danger:#f44336; --maxw:1100px;
 }
 :root.light{
-  --bg:#f6f8fb; --panel:#ffffff; --muted:#444; --gold:#C19A00; --card:#ffffff; --accent:#0b1220; --glass:rgba(11,18,32,0.06);
+  --bg:#f6f8fb; --panel:#ffffff; --muted:#444; --gold:#C19A00; --card:#ffffff; --accent:#0b1220;
   --blue:#0078FF; --green:#0b9b5b; --danger:#c62828;
 }
 
-*{box-sizing:border-box;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;color:var(--accent);margin:0;padding:0}
+*{box-sizing:border-box;font-family:Inter,system-ui,Arial;color:var(--accent);margin:0;padding:0}
 html,body{height:100%;width:100%;background:linear-gradient(180deg,var(--bg),#0b0b0b);-webkit-font-smoothing:antialiased;font-size:15px;overflow-y:auto;overflow-x:hidden}
-.container{max-width:var(--maxw);margin:18px auto;padding:14px;display:flex;flex-direction:column;gap:14px}
+.container{max-width:var(--maxw);margin:18px auto;padding:14px;display:flex;flex-direction:column;gap:12px}
 
 /* Header */
-.header{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px;border-radius:10px;background:linear-gradient(180deg,var(--panel),rgba(255,255,255,0.01));border:1px solid rgba(255,215,0,0.04)}
-.brand{display:flex;align-items:center;gap:12px}
-.brand h1{font-size:20px;color:var(--gold);text-shadow:0 0 12px rgba(255,215,0,0.06);margin:0}
-.brand .sub{font-size:13px;color:var(--muted)}
+.header{display:flex;flex-direction:column;align-items:center;padding:12px;border-radius:10px;background:linear-gradient(180deg,var(--panel),rgba(255,255,255,0.01));border:1px solid rgba(255,215,0,0.04)}
+.brand h1{font-size:20px;color:var(--gold);text-shadow:0 0 10px rgba(255,215,0,0.05);margin:0}
+.brand .sub{font-size:13px;color:var(--muted);margin-top:6px}
 
 /* toolbar */
-.toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;margin-top:6px}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%}
 .controls{display:flex;gap:8px;align-items:center}
 .btn{background:var(--gold);color:#0b0b0b;padding:8px 12px;border-radius:10px;border:none;font-weight:700;cursor:pointer}
 .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--accent)}
-.select, input, .select{background:#1e1e1e;color:var(--accent);border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px}
+.select,input{background:#1e1e1e;color:var(--accent);border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px}
 .select.light, input.light{background:#fff;color:#111;border:1px solid #ddd}
 
-/* Top grid: parameters + summary (equal height) */
-.top-row{display:grid;grid-template-columns:1fr 420px;gap:12px;align-items:start}
+/* layout: parameters (full width) then summary under */
 .panel{background:var(--panel);padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 18px rgba(0,0,0,0.45);overflow:hidden}
-
-/* parameters form */
-.params{display:flex;flex-direction:column;gap:8px}
+.params-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .form-row{display:flex;gap:8px}
 .form-row .col{flex:1}
 .section-title{font-weight:700;color:var(--gold);margin-bottom:8px}
 .small{font-size:13px;color:var(--muted)}
 .input{width:100%;padding:8px;border-radius:8px;background:#1f1f1f;color:var(--accent);border:1px solid rgba(255,255,255,0.03)}
 
-/* summary KPIs */
-.kpis{display:flex;flex-direction:column;gap:8px}
-.kpi-row{display:flex;gap:8px}
-.kpi{flex:1;padding:10px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border:1px solid rgba(255,255,255,0.02)}
-.kpi .label{font-size:12px;color:var(--muted)}
-.kpi .value{font-weight:800;color:var(--gold);font-size:16px}
+/* summary (below parameters) */
+.summary-cards{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.summary-card{flex:1;min-width:160px;padding:10px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);border:1px solid rgba(255,255,255,0.02)}
+.summary-card .label{font-size:12px;color:var(--muted)}
+.summary-card .num{font-weight:800;font-size:16px;color:var(--gold)}
 
 /* chart */
 .chart-panel{height:320px;padding:12px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.00));border:1px solid rgba(255,255,255,0.03)}
 
-/* tables compare */
-.compare-wrap{display:flex;gap:12px;align-items:flex-start;justify-content:center}
+/* compare tables */
+.compare-wrap{display:flex;gap:12px;align-items:flex-start;justify-content:center;margin-top:8px}
 .box{flex:1;min-width:0}
 .table{width:100%;border-collapse:collapse;font-size:13px}
 .table thead th{position:sticky;top:0;padding:8px;text-align:right}
@@ -73,25 +67,20 @@ html,body{height:100%;width:100%;background:linear-gradient(180deg,var(--bg),#0b
 
 /* A header - dourado */
 .tableA thead th{background:#262626;color:var(--gold);border-top:3px solid var(--gold)}
-.tableA thead th.month{background:#333333;color:var(--blue);}
+.tableA thead th.month{background:#333333;color:var(--blue)}
 
 /* B header - azul royal */
 .tableB thead th{background:#102033;color:var(--blue);border-top:3px solid var(--blue)}
 .tableB thead th.month{background:#333333;color:var(--blue)}
 
-/* alternate rows */
-.table tbody tr:nth-child(odd){background:rgba(255,255,255,0.006)}
-.table tbody tr:nth-child(even){background:rgba(255,255,255,0.01)}
-
-/* footer actions */
-.actions{display:flex;gap:8px;justify-content:center;margin-top:8px}
+/* actions */
+.actions{display:flex;gap:8px;justify-content:center;margin-top:12px}
 
 /* responsive */
-@media(max-width:1100px){
-  .top-row{grid-template-columns:1fr}
-  .toolbar{flex-direction:column;align-items:stretch}
-  .chart-panel{height:240px}
+@media(max-width:900px){
+  .params-grid{grid-template-columns:1fr}
   .compare-wrap{flex-direction:column}
+  .chart-panel{height:240px}
 }
 </style>
 </head>
@@ -105,7 +94,7 @@ html,body{height:100%;width:100%;background:linear-gradient(180deg,var(--bg),#0b
       <div class="sub">Simulador Bancário v2.3 — PRICE · SAC · SACRE · Quitação bancária real</div>
     </div>
 
-    <div class="toolbar" style="width:100%">
+    <div class="toolbar" style="width:100%;margin-top:8px">
       <div class="controls">
         <div id="nowDate" class="small"></div>
       </div>
@@ -122,124 +111,139 @@ html,body{height:100%;width:100%;background:linear-gradient(180deg,var(--bg),#0b
     </div>
   </div>
 
-  <!-- Top row: parameters + summary -->
-  <div class="top-row">
-    <div class="panel params" id="paramsPanel">
-      <div class="section-title">Parâmetros</div>
+  <!-- Parameters (full width) -->
+  <div class="panel" id="paramsPanel">
+    <div class="section-title">Parâmetros</div>
+    <div class="params-grid">
+      <div>
+        <label class="small">Valor do financiamento (R$)</label>
+        <input id="loanAmount" class="input" type="number" value="500000">
 
-      <label class="small">Valor do financiamento (R$)</label>
-      <input id="loanAmount" class="input" type="number" value="500000">
+        <label class="small">Entrada (R$)</label>
+        <input id="downPayment" class="input" type="number" value="0">
 
-      <label class="small">Entrada (R$)</label>
-      <input id="downPayment" class="input" type="number" value="0">
-
-      <div class="form-row">
-        <div class="col">
-          <label class="small">Prazo (meses)</label>
-          <input id="termMonths" class="input" type="number" value="240">
+        <div class="form-row" style="margin-top:8px">
+          <div class="col">
+            <label class="small">Prazo (meses)</label>
+            <input id="termMonths" class="input" type="number" value="240">
+          </div>
+          <div class="col">
+            <label class="small">Taxa nominal</label>
+            <div style="display:flex;gap:8px">
+              <input id="rateValue" class="input" type="number" value="11" style="flex:1">
+              <select id="ratePeriod" class="select"><option value="a.a">% a.a.</option><option value="a.m">% a.m.</option></select>
+            </div>
+          </div>
         </div>
-        <div class="col">
-          <label class="small">Taxa nominal</label>
-          <div style="display:flex;gap:8px">
-            <input id="rateValue" class="input" type="number" value="11" style="flex:1">
-            <select id="ratePeriod" class="select"><option value="a.a">% a.a.</option><option value="a.m">% a.m.</option></select>
+
+        <label class="small" style="margin-top:8px">Conversão anual → mensal</label>
+        <select id="autoConvert" class="select"><option value="1">Sim (geométrica)</option><option value="0">Não (divisão)</option></select>
+
+        <div style="height:8px"></div>
+
+        <div class="form-row">
+          <div class="col">
+            <label class="small">Sistema A</label>
+            <select id="systemA" class="select">
+              <option value="price">PRICE</option>
+              <option value="sac">SAC</option>
+              <option value="sacre">SACRE</option>
+              <option value="simples">Juros Simples</option>
+              <option value="compostos">Juros Compostos</option>
+            </select>
+          </div>
+          <div class="col">
+            <label class="small">Sistema B</label>
+            <select id="systemB" class="select">
+              <option value="sac">SAC</option>
+              <option value="price">PRICE</option>
+              <option value="sacre">SACRE</option>
+              <option value="simples">Juros Simples</option>
+              <option value="compostos">Juros Compostos</option>
+            </select>
           </div>
         </div>
       </div>
 
-      <label class="small">Conversão anual → mensal</label>
-      <select id="autoConvert" class="select"><option value="1">Sim (geométrica)</option><option value="0">Não (divisão)</option></select>
+      <div>
+        <label class="small">Correção (SACRE)</label>
+        <select id="indexSelect" class="select"><option value="none">Nenhuma</option><option value="TR">TR</option><option value="IPCA">IPCA</option><option value="INCC">INCC</option></select>
+        <label class="small">Importar índice (CSV: mês,fator)</label>
+        <input id="indexFile" class="input" type="file" accept=".csv">
 
-      <div style="height:6px"></div>
+        <div style="height:8px"></div>
 
-      <div class="form-row">
-        <div class="col">
-          <label class="small">Sistema A</label>
-          <select id="systemA" class="select">
-            <option value="price">PRICE</option>
-            <option value="sac">SAC</option>
-            <option value="sacre">SACRE</option>
-            <option value="simples">Juros Simples</option>
-            <option value="compostos">Juros Compostos</option>
-          </select>
+        <div class="section-title">Carência</div>
+        <div class="form-row">
+          <div class="col">
+            <label class="small">Tipo</label>
+            <select id="carenciaType" class="select"><option value="none">Sem carência</option><option value="juros">Paga só juros</option><option value="total">Total (capitaliza)</option></select>
+          </div>
+          <div class="col">
+            <label class="small">Meses</label>
+            <input id="carenciaMonths" class="input" type="number" value="0">
+          </div>
         </div>
-        <div class="col">
-          <label class="small">Sistema B</label>
-          <select id="systemB" class="select">
-            <option value="sac">SAC</option>
-            <option value="price">PRICE</option>
-            <option value="sacre">SACRE</option>
-            <option value="simples">Juros Simples</option>
-            <option value="compostos">Juros Compostos</option>
-          </select>
+
+        <div style="height:8px"></div>
+
+        <div class="section-title">Descontos & Quitação</div>
+        <label class="small">Desconto últimas parcelas (%)</label>
+        <input id="discountPercent" class="input" type="number" value="0">
+        <label class="small">Últimas N parcelas</label>
+        <input id="discountCount" class="input" type="number" value="0">
+
+        <div style="height:6px"></div>
+
+        <label class="small">Quitação antecipada</label>
+        <div class="form-row">
+          <input id="settleMonth" class="input" type="number" placeholder="Mês (0 = sem quitação)" value="0">
+          <input id="settleDiscountPct" class="input" type="number" placeholder="% negociação" value="0">
         </div>
-      </div>
 
-      <label class="small">Correção (SACRE)</label>
-      <select id="indexSelect" class="select"><option value="none">Nenhuma</option><option value="TR">TR</option><option value="IPCA">IPCA</option><option value="INCC">INCC</option></select>
-      <label class="small">Importar índice (CSV: mês,fator)</label>
-      <input id="indexFile" class="input" type="file" accept=".csv">
+        <div style="height:8px"></div>
 
-      <div style="height:6px"></div>
+        <label class="small">Arredondamento</label>
+        <select id="roundMode" class="select"><option value="round">Arredondar</option><option value="trunc">Truncar (banco)</option></select>
 
-      <div class="section-title">Carência</div>
-      <div class="form-row">
-        <div class="col">
-          <label class="small">Tipo</label>
-          <select id="carenciaType" class="select"><option value="none">Sem carência</option><option value="juros">Paga só juros</option><option value="total">Total (capitaliza)</option></select>
+        <div style="height:10px"></div>
+        <div style="display:flex;gap:8px">
+          <button id="btnCalc" class="btn">Calcular A & B</button>
+          <button id="btnReset" class="btn ghost">Restaurar</button>
         </div>
-        <div class="col">
-          <label class="small">Meses</label>
-          <input id="carenciaMonths" class="input" type="number" value="0">
-        </div>
-      </div>
-
-      <div style="height:6px"></div>
-
-      <div class="section-title">Descontos & Quitação</div>
-      <label class="small">Desconto últimas parcelas (%)</label>
-      <input id="discountPercent" class="input" type="number" value="0">
-      <label class="small">Últimas N parcelas</label>
-      <input id="discountCount" class="input" type="number" value="0">
-
-      <div style="height:6px"></div>
-
-      <label class="small">Quitação antecipada</label>
-      <div class="form-row">
-        <input id="settleMonth" class="input" type="number" placeholder="Mês (0 = sem quitação)" value="0">
-        <input id="settleDiscountPct" class="input" type="number" placeholder="% negociação" value="0">
-      </div>
-
-      <div style="height:6px"></div>
-
-      <label class="small">Arredondamento</label>
-      <select id="roundMode" class="select"><option value="round">Arredondar</option><option value="trunc">Truncar (banco)</option></select>
-
-      <div style="height:10px"></div>
-      <div style="display:flex;gap:8px;justify-content:flex-start">
-        <button id="btnCalc" class="btn">Calcular A & B</button>
-        <button id="btnReset" class="btn ghost">Restaurar</button>
       </div>
     </div>
+  </div>
 
-    <div class="panel" id="summaryPanel">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <div class="section-title">Resumo</div>
-          <div class="small">Visão rápida dos KPIs (Sistema A)</div>
-        </div>
-        <div class="small" id="nowDate2"></div>
+  <!-- Summary under parameters -->
+  <div class="panel" id="summaryPanel">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div class="section-title">Resumo da Simulação</div>
+        <div class="small">Números em destaque — visual limpo</div>
+      </div>
+      <div class="small" id="nowDate2"></div>
+    </div>
+
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="label small">Prestação média (A)</div>
+        <div id="kpiPaymentA" class="num">-</div>
       </div>
 
-      <div class="kpis" style="margin-top:10px">
-        <div class="kpi-row">
-          <div class="kpi"><div class="label small">Prestação média (A)</div><div id="kpiPaymentA" class="value">-</div></div>
-          <div class="kpi"><div class="label small">Juros totais (A)</div><div id="kpiTotalInterestA" class="value" style="color:var(--green)">-</div></div>
-        </div>
-        <div class="kpi-row">
-          <div class="kpi"><div class="label small">Saldo financiado (A)</div><div id="kpiFinancedA" class="value">-</div></div>
-          <div class="kpi"><div class="label small">Sistema A</div><div id="kpiSysA" class="value" style="color:var(--gold)">-</div></div>
-        </div>
+      <div class="summary-card">
+        <div class="label small">Juros totais (A)</div>
+        <div id="kpiTotalInterestA" class="num" style="color:var(--green)">-</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="label small">Saldo financiado (A)</div>
+        <div id="kpiFinancedA" class="num">-</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="label small">Sistema A</div>
+        <div id="kpiSysA" class="num" style="color:var(--gold)">-</div>
       </div>
     </div>
   </div>
@@ -249,8 +253,8 @@ html,body{height:100%;width:100%;background:linear-gradient(180deg,var(--bg),#0b
     <canvas id="mainChart" style="width:100%;height:100%"></canvas>
   </div>
 
-  <!-- Compare tables -->
-  <div class="panel table-panel">
+  <!-- Tables -->
+  <div class="panel">
     <div class="compare-wrap">
       <div class="box">
         <h3 id="titleA" style="color:var(--gold)">A — PRICE</h3>
@@ -287,20 +291,20 @@ html,body{height:100%;width:100%;background:linear-gradient(180deg,var(--bg),#0b
 
 <script>
 /* -------------------------
-  Helpers and state
+  Helpers & state
    ------------------------- */
 document.getElementById('nowDate').innerText = new Date().toLocaleString('pt-BR',{year:'numeric',month:'short',day:'numeric'});
 document.getElementById('nowDate2').innerText = document.getElementById('nowDate').innerText;
 
-let indexSeries = {}; // optional index factors
+let indexSeries = {};
 let mainChart = null;
-let lastA = null, lastB = null, lastMeta = null, lastSettle = null;
+let lastA=null,lastB=null,lastMeta=null,lastSettle=null;
 
 function toNum(v){ return Number(v) || 0; }
 function fmt(v){ return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:2}); }
 function roundMaker(mode){ if(mode==='trunc') return v=>Math.floor((Number(v)||0)*100)/100; return v=>Math.round((Number(v)||0)*100)/100; }
 
-/* read CSV index */
+/* load index CSV */
 document.getElementById('indexFile').addEventListener('change', e=>{
   const f = e.target.files[0]; if(!f) return;
   const r = new FileReader();
@@ -323,11 +327,7 @@ function toMonthlyRate(value, period, auto){
   return v/12;
 }
 
-/* -------------------------
-  Main schedule generator
-  - supports price, sac, sacre, simples, compostos
-  - handles carência, discounts on last N, settlement (PV discounted)
-   ------------------------- */
+/* schedule generator (supports all requested modes + carência/discount/settlement) */
 function generateBankSchedule(opts){
   const rnd = roundMaker(opts.roundMode || 'round');
   const amount = toNum(opts.amount);
@@ -371,7 +371,7 @@ function generateBankSchedule(opts){
     }
   }
 
-  // carência juros (pay interest only)
+  // carência juros
   if(carType==='juros' && carMonths>0){
     for(let m=1;m<=carMonths;m++){
       const interest = balance * i;
@@ -383,9 +383,8 @@ function generateBankSchedule(opts){
   const amortMonths = totalMonths - ((carType==='none') ? 0 : carMonths);
   const M = Math.max(1, amortMonths);
 
-  // systems
+  // systems implementation
   if(system === 'compostos'){
-    // accumulate interest, final payment clears
     for(let m=1;m<=totalMonths;m++){
       const balStart = balance;
       const interest = balStart * i;
@@ -433,7 +432,7 @@ function generateBankSchedule(opts){
     for(let k=0;k<M;k++){
       const m = startMonth + k;
       const balStart = balance;
-      const interest = financed * i; // simple interest on original financed
+      const interest = financed * i;
       const amort = amortConst;
       const payment = interest + amort;
       balance = balStart - amort;
@@ -441,14 +440,14 @@ function generateBankSchedule(opts){
     }
   }
 
-  // apply discounts on last N installments (affects amortization and subsequent balances)
+  // discounts on last N installments
   if(discountPct>0 && discountCount>0){
-    const amortRows = schedule.filter(s => s.payment > 0);
+    const amortRows = schedule.filter(s=>s.payment>0);
     const L = amortRows.length;
     for(let j=0;j<discountCount;j++){
-      const idx = L-1 - j; if(idx < 0) break;
+      const idx = L-1 - j; if(idx<0) break;
       const row = amortRows[idx];
-      const globalIdx = schedule.findIndex(s => s.month === row.month);
+      const globalIdx = schedule.findIndex(s=>s.month===row.month);
       const originalPayment = schedule[globalIdx].payment;
       const discountAmount = originalPayment * (discountPct/100);
       const newPayment = Math.max(0, originalPayment - discountAmount);
@@ -458,10 +457,10 @@ function generateBankSchedule(opts){
       schedule[globalIdx].amortization = rnd(newAmort);
       schedule[globalIdx].end = rnd(schedule[globalIdx].balanceStart - newAmort);
       // propagate forward
-      for(let t = globalIdx + 1; t < schedule.length; t++){
+      for(let t=globalIdx+1;t<schedule.length;t++){
         schedule[t].balanceStart = rnd(schedule[t-1].end);
         schedule[t].interest = rnd(schedule[t].balanceStart * i);
-        if(schedule[t].payment > 0){
+        if(schedule[t].payment>0){
           schedule[t].amortization = rnd(schedule[t].payment - schedule[t].interest);
           schedule[t].end = rnd(schedule[t].balanceStart - schedule[t].amortization);
         } else {
@@ -471,18 +470,18 @@ function generateBankSchedule(opts){
     }
   }
 
-  // real settlement: PV of remaining payments discounted at contractual rate
-  if(settleMonth && settleMonth > 0){
-    let pv = 0;
+  // real settlement
+  if(settleMonth && settleMonth>0){
+    let pv=0;
     for(const r of schedule){
-      if(r.month > settleMonth && r.payment > 0){
+      if(r.month>settleMonth && r.payment>0){
         const t = r.month - settleMonth;
         pv += r.payment / Math.pow(1 + i, t);
       }
     }
     const settlementRaw = pv * (1 - (settleDiscountPct||0)/100);
     const settlement = rnd(settlementRaw);
-    const upto = schedule.filter(s => s.month <= settleMonth);
+    const upto = schedule.filter(s=>s.month<=settleMonth);
     const last = upto.length ? upto[upto.length-1] : null;
     const balanceBefore = last ? last.end : (schedule.length ? schedule[schedule.length-1].end : rnd(financed));
     const settleRow = {
@@ -502,13 +501,11 @@ function generateBankSchedule(opts){
   return { financed, schedule };
 }
 
-/* -------------------------
-  Rendering helpers
-   ------------------------- */
+/* rendering helpers */
 function fillTable(selector, schedule){
   const tbody = document.querySelector(selector + ' tbody');
   tbody.innerHTML = '';
-  schedule.forEach(r => {
+  schedule.forEach(r=>{
     const tr = document.createElement('tr');
     const monthLabel = Number.isInteger(r.month) ? `M${r.month}` : `M${Math.floor(r.month)} (Quitação)`;
     const note = r.note ? ` — ${r.note}` : '';
@@ -524,42 +521,24 @@ function fillTable(selector, schedule){
 }
 
 function renderChart(scheduleA, scheduleB, labelA, labelB){
-  const maxM = Math.max(
-    scheduleA.length ? Math.ceil(scheduleA[scheduleA.length-1].month) : 0,
-    scheduleB.length ? Math.ceil(scheduleB[scheduleB.length-1].month) : 0
-  );
-  const labels = []; for(let i=1;i<=Math.max(24,maxM);i++) labels.push('M'+i);
+  const maxM = Math.max(scheduleA.length?Math.ceil(scheduleA[scheduleA.length-1].month):0, scheduleB.length?Math.ceil(scheduleB[scheduleB.length-1].month):0);
+  const labels=[]; for(let i=1;i<=Math.max(24,maxM);i++) labels.push('M'+i);
   const balA = labels.map((l,i)=>{ const m=i+1; const row = scheduleA.find(r=>Math.floor(r.month)===m); return row?row.end:(scheduleA.length?scheduleA[scheduleA.length-1].end:0); });
   const balB = labels.map((l,i)=>{ const m=i+1; const row = scheduleB.find(r=>Math.floor(r.month)===m); return row?row.end:(scheduleB.length?scheduleB[scheduleB.length-1].end:0); });
 
   const ctx = document.getElementById('mainChart').getContext('2d');
-  if(mainChart){
-    mainChart.data.labels = labels;
-    mainChart.data.datasets[0].data = balA;
-    mainChart.data.datasets[1].data = balB;
-    mainChart.update();
-    return;
-  }
+  if(mainChart){ mainChart.data.labels = labels; mainChart.data.datasets[0].data = balA; mainChart.data.datasets[1].data = balB; mainChart.update(); return; }
   mainChart = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels,
-      datasets: [
-        { label: labelA, data: balA, borderColor: '#FFD700', backgroundColor: 'rgba(255,215,0,0.04)', tension:0.25, pointRadius:0 },
-        { label: labelB, data: balB, borderColor: '#00BFFF', backgroundColor: 'rgba(0,191,255,0.04)', tension:0.25, pointRadius:0 }
-      ]
-    },
-    options: {
-      responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ labels:{ color: 'var(--accent)' } } },
-      scales:{ x:{ ticks:{ color: 'var(--accent)' } }, y:{ ticks:{ color: 'var(--accent)' } } }
-    }
+    data: { labels, datasets:[
+      { label: labelA, data: balA, borderColor: '#FFD700', backgroundColor:'rgba(255,215,0,0.04)', tension:0.25, pointRadius:0 },
+      { label: labelB, data: balB, borderColor: '#00BFFF', backgroundColor:'rgba(0,191,255,0.04)', tension:0.25, pointRadius:0 }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:'var(--accent)'}}}, scales:{x:{ticks:{color:'var(--accent)'}}, y:{ticks:{color:'var(--accent)'}} }
   });
 }
 
-/* -------------------------
-  Exports (XLSX / CSV / PDF / JSON)
-   ------------------------- */
+/* exports (XLSX/CSV/PDF/JSON) */
 function exportXlsx(objA, objB, meta){
   const wb = XLSX.utils.book_new();
   const sheetA = objA.schedule.map(r=>({Mes:r.month,SaldoInicial:r.balanceStart,Juros:r.interest,Amortizacao:r.amortization,Prestacao:r.payment,Desconto:r.discount||0,SaldoFinal:r.end,Nota:r.note||''}));
@@ -587,7 +566,7 @@ async function exportPdf(element, meta, settleInfo){
 }
 
 /* -------------------------
-  Main UI actions
+  UI actions
    ------------------------- */
 document.getElementById('btnCalc').addEventListener('click', ()=> {
   try{
@@ -599,7 +578,6 @@ document.getElementById('btnCalc').addEventListener('click', ()=> {
     const auto = document.getElementById('autoConvert').value === '1';
     const sysA = document.getElementById('systemA').value;
     const sysB = document.getElementById('systemB').value;
-    const indexType = document.getElementById('indexSelect').value;
     const carType = document.getElementById('carenciaType').value;
     const carMonths = Math.max(0, parseInt(document.getElementById('carenciaMonths').value) || 0);
     const discountPct = toNum(document.getElementById('discountPercent').value);
@@ -610,7 +588,6 @@ document.getElementById('btnCalc').addEventListener('click', ()=> {
 
     const monthlyRate = toMonthlyRate(rateVal, ratePeriod, auto);
 
-    // pass indexSeries if SACRE; else empty
     const idxMap = (document.getElementById('indexSelect').value === 'none') ? {} : indexSeries;
 
     const optsCommon = { amount, down, months, rate: monthlyRate, carType, carMonths, indexMap: idxMap, reaj:0, discountPct, discountCount, settleMonth, settleDiscountPct, roundMode };
@@ -626,7 +603,7 @@ document.getElementById('btnCalc').addEventListener('click', ()=> {
 
     renderChart(resA.schedule, resB.schedule, 'A-'+sysA.toUpperCase(), 'B-'+sysB.toUpperCase());
 
-    // KPIs
+    // KPIs into summary (text with colored numbers)
     const totInterestA = resA.schedule.reduce((s,x)=>s+Number(x.interest),0);
     const avgPayA = resA.schedule.length ? resA.schedule.reduce((s,x)=>s+Number(x.payment),0)/resA.schedule.length : 0;
     document.getElementById('kpiPaymentA').innerText = fmt(avgPayA);
@@ -649,7 +626,7 @@ document.getElementById('btnCalc').addEventListener('click', ()=> {
   }
 });
 
-/* exports handlers */
+/* exports */
 document.getElementById('btnExportXlsx').addEventListener('click', ()=> {
   if(!lastA) return alert('Gere a simulação primeiro.');
   exportXlsx(lastA, lastB||{schedule:[]}, lastMeta);
@@ -689,7 +666,7 @@ document.getElementById('themeSelect').addEventListener('change', e=>{
   else { document.documentElement.classList.remove('light'); document.querySelectorAll('input, select').forEach(x=>x.classList.remove('light')); }
 });
 
-/* run initial */
+/* auto-run initial */
 window.addEventListener('load', ()=> {
   document.getElementById('themeSelect').value='dark';
   setTimeout(()=>document.getElementById('btnCalc').click(),120);
