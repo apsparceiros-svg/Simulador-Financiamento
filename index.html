@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>APSPARCEIROS — Simulador Bancário v2.2</title>
+<title>APSPARCEIROS — Simulador Bancário v2.2 (fix)</title>
 
-<!-- libs -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
@@ -28,24 +27,22 @@ html,body{height:100%;width:100%;background:linear-gradient(180deg,var(--bg),#09
 .app{max-width:var(--maxw);margin:18px auto;padding:12px;display:flex;flex-direction:column;gap:12px}
 
 /* header */
-.header{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(180deg,var(--panel),rgba(255,255,255,0.01));padding:12px;border-radius:10px;border:1px solid rgba(255,215,0,0.06);box-shadow:0 6px 18px rgba(0,0,0,0.5)}
-.brand{display:flex;flex-direction:column}
-.brand h1{font-size:18px;color:var(--gold);text-shadow:0 0 8px rgba(255,215,0,0.06);margin:0}
+.header{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(180deg,var(--panel),rgba(255,255,255,0.01));padding:12px;border-radius:10px;border:1px solid rgba(255,215,0,0.06);}
+.brand h1{font-size:18px;color:var(--gold);margin:0}
 .brand .sub{font-size:12px;color:var(--muted);margin-top:4px}
 
 .controls{display:flex;gap:8px;align-items:center}
 .btn{background:var(--gold);color:#0b0b0b;padding:8px 12px;border-radius:10px;border:none;font-weight:700;cursor:pointer}
 .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--accent);border-radius:10px}
 .select,input{background:#1e1e1e;color:var(--accent);border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px}
-.select.light,input.light{background:#fff;color:#111;border:1px solid #ddd}
 
-/* main grid: parameters + summary, equal height */
+/* top grid */
 .top-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
-.panel{background:var(--panel);padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 18px rgba(0,0,0,0.45);overflow:hidden}
+.panel{background:var(--panel);padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);overflow:hidden}
 .left{min-height:220px;max-height:420px;overflow:auto;padding-right:6px}
 .right{min-height:220px;display:flex;flex-direction:column;gap:8px}
 
-/* section */
+/* form */
 .section-title{font-weight:700;color:var(--gold);margin-bottom:8px}
 .small{font-size:13px;color:var(--muted)}
 .form-row{display:flex;gap:8px;margin-top:8px}
@@ -58,7 +55,7 @@ html,body{height:100%;width:100%;background:linear-gradient(180deg,var(--bg),#09
 .kpi .label{font-size:12px;color:var(--muted)}
 .kpi .num{font-weight:800;color:var(--gold)}
 
-/* table */
+/* tables */
 .table-wrap{padding:8px;border-radius:8px;background:var(--card);border:1px solid rgba(255,255,255,0.03);overflow:auto}
 .compare{display:flex;gap:12px;align-items:flex-start;justify-content:center}
 .box{flex:1;min-width:0}
@@ -67,11 +64,9 @@ html,body{height:100%;width:100%;background:linear-gradient(180deg,var(--bg),#09
 .table tbody td{padding:8px;text-align:right;border-bottom:1px dashed rgba(255,255,255,0.02)}
 .table th:first-child, .table td:first-child{text-align:left;padding-left:10px}
 
-/* Tabela A header (dourado) */
+/* headers */
 .tableA thead th{background:#262626;color:var(--gold);border-top:3px solid var(--gold);}
 .tableA thead th.month{background:#333333;color:var(--blue);}
-
-/* Tabela B header (azul royal) */
 .tableB thead th{background:#112233;color:var(--blue);border-top:3px solid var(--blue);}
 .tableB thead th.month{background:#333333;color:var(--blue);}
 
@@ -79,55 +74,38 @@ html,body{height:100%;width:100%;background:linear-gradient(180deg,var(--bg),#09
 .table tbody tr:nth-child(odd){background:rgba(255,255,255,0.006)}
 .table tbody tr:nth-child(even){background:rgba(255,255,255,0.01)}
 
-/* highlighted totals */
-.highlight-value{color:var(--green);font-weight:900}
-
 /* responsive */
 @media(max-width:1000px){
   .top-grid{grid-template-columns:1fr}
   .compare{flex-direction:column}
   .chart-card{height:240px}
 }
-
-/* ensure no horizontal scroll from inputs */
-input[type=number], select { min-width:0; width:100%; box-sizing:border-box; }
-
-/* print */
-@media print{
-  body{background:#fff;color:#000}
-  .no-print{display:none}
-  .table thead th{background:#eee!important;color:#000!important}
-}
 </style>
 </head>
 <body>
 <div class="app">
 
-  <!-- header -->
   <div class="header no-print">
     <div class="brand">
       <h1>APSPARCEIROS</h1>
-      <div class="sub">Simulador Bancário v2.2 — layout centralizado e refinado</div>
+      <div class="sub">Simulador Bancário v2.2 — (fix)</div>
     </div>
-
     <div class="controls">
       <div class="small" id="nowDate"></div>
-      <select id="themeSelect" class="select" title="Tema">
+      <select id="themeSelect" class="select">
         <option value="dark">Escuro / Dourado</option>
         <option value="light">Claro / Azul</option>
       </select>
-      <button id="exportXlsx" class="btn ghost">Exportar XLSX</button>
-      <button id="exportCsv" class="btn ghost">Exportar CSV</button>
-      <button id="exportPdf" class="btn ghost">Gerar PDF</button>
-      <button id="printBtn" class="btn ghost">Imprimir</button>
+      <button id="btnExportXlsx" class="btn ghost">Exportar XLSX</button>
+      <button id="btnExportCsv" class="btn ghost">Exportar CSV</button>
+      <button id="btnExportPdf" class="btn ghost">Gerar PDF</button>
+      <button id="btnPrint" class="btn ghost">Imprimir</button>
     </div>
   </div>
 
-  <!-- top grid: parameters + summary -->
   <div class="top-grid">
     <div class="panel left" id="paramsPanel">
       <div class="section-title">Parâmetros</div>
-
       <label class="small">Valor do financiamento (R$)</label>
       <input id="loanAmount" type="number" value="500000">
 
@@ -219,8 +197,8 @@ input[type=number], select { min-width:0; width:100%; box-sizing:border-box; }
       <div style="height:10px"></div>
 
       <div style="display:flex;gap:8px">
-        <button id="calcBtn" class="btn">Calcular A & B</button>
-        <button id="resetBtn" class="btn ghost">Restaurar</button>
+        <button id="btnCalc" class="btn">Calcular A & B</button>
+        <button id="btnReset" class="btn ghost">Restaurar</button>
       </div>
 
     </div>
@@ -254,12 +232,10 @@ input[type=number], select { min-width:0; width:100%; box-sizing:border-box; }
     </div>
   </div>
 
-  <!-- chart above tables -->
   <div class="panel chart-card">
     <canvas id="mainChart" style="width:100%;height:100%"></canvas>
   </div>
 
-  <!-- tables -->
   <div class="panel table-wrap">
     <div class="compare" id="compareWrap">
       <div class="box">
@@ -291,55 +267,61 @@ input[type=number], select { min-width:0; width:100%; box-sizing:border-box; }
 </div>
 
 <script>
-/* ---- state & helpers ---- */
+// defensive logging for local debugging
+window.onerror = function(msg, src, line, col, error){
+  console.error('Window error', msg, src, line, col, error);
+  alert('Erro no script: ' + msg + ' (ver console F12)');
+};
+
 document.getElementById('nowDate').innerText = new Date().toLocaleString('pt-BR',{year:'numeric',month:'short',day:'numeric'});
 document.getElementById('nowDate2').innerText = document.getElementById('nowDate').innerText;
 
-let indexSeries = {}; // month->factor
+let indexSeries = {};
 let mainChart = null;
 let lastA=null,lastB=null,lastMeta=null,lastSettle=null;
 
-function toNum(v){return Number(v)||0;}
-function fmt(v){return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:2});}
+function toNum(v){ return Number(v) || 0; }
+function fmt(v){ return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:2}); }
 function roundMaker(mode){ if(mode==='trunc') return v=>Math.floor((Number(v)||0)*100)/100; return v=>Math.round((Number(v)||0)*100)/100; }
 
-/* import index CSV */
+// parse CSV for indices
 document.getElementById('indexFile').addEventListener('change', e=>{
-  const f=e.target.files[0]; if(!f) return;
-  const r=new FileReader(); r.onload = ev => {
-    indexSeries={};
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    indexSeries = {};
     ev.target.result.split(/\r?\n/).forEach(line=>{
-      const parts=line.split(/[,;|\t]/).map(s=>s.trim()).filter(Boolean);
-      if(parts.length>=2){const m=Number(parts[0]), f=Number(parts[1]); if(!isNaN(m)&&!isNaN(f)) indexSeries[m]=f;}
+      const parts = line.split(/[,;|\t]/).map(s=>s.trim()).filter(Boolean);
+      if(parts.length>=2){ const m = Number(parts[0]), f = Number(parts[1]); if(!isNaN(m) && !isNaN(f)) indexSeries[m] = f; }
     });
-    alert('Índice importado: '+Object.keys(indexSeries).length+' meses');
+    console.log('Índice importado', indexSeries);
+    alert('Índice importado: ' + Object.keys(indexSeries).length + ' meses');
   };
   r.readAsText(f);
 });
 
-/* convert nominal -> monthly */
 function toMonthlyRate(value, period, auto){
   const v = Number(value)/100;
-  if(period==='a.m') return v;
-  if(auto) return Math.pow(1+v,1/12)-1;
+  if(period === 'a.m') return v;
+  if(auto) return Math.pow(1+v,1/12) - 1;
   return v/12;
 }
 
-/* core generator with settlement */
+// core generator (keeps all modes)
 function generateBankSchedule(opts){
   const round = roundMaker(opts.roundMode || 'round');
   const amount = toNum(opts.amount);
   const down = toNum(opts.down);
-  const totalMonths = Math.max(1,Math.floor(opts.months||1));
+  const totalMonths = Math.max(1, Math.floor(opts.months||1));
   const i = toNum(opts.rate);
   const system = opts.system;
   const carType = opts.carType;
-  const carMonths = Math.max(0,Math.floor(opts.carMonths||0));
-  const indexMap = opts.indexMap||{};
+  const carMonths = Math.max(0, Math.floor(opts.carMonths||0));
+  const indexMap = opts.indexMap || {};
   const reaj = toNum(opts.reaj||0);
-  const discountPct = Math.max(0,toNum(opts.discountPct||0));
-  const discountCount = Math.max(0,Math.floor(opts.discountCount||0));
-  const settleMonth = Math.max(0,Math.floor(toNum(opts.settleMonth||0)));
+  const discountPct = Math.max(0, toNum(opts.discountPct||0));
+  const discountCount = Math.max(0, Math.floor(opts.discountCount||0));
+  const settleMonth = Math.max(0, Math.floor(toNum(opts.settleMonth||0)));
   const settleDiscountPct = toNum(opts.settleDiscountPct||0);
 
   let financed = Math.max(0, amount - down);
@@ -348,50 +330,51 @@ function generateBankSchedule(opts){
 
   function push(m, start, interest, amort, payment, discount, end, note){
     schedule.push({
-      month:m,
+      month: m,
       balanceStart: round(start),
       interest: round(interest),
       amortization: round(amort),
       payment: round(payment),
       discount: discount ? round(discount) : 0,
       end: round(end),
-      note: note||''
+      note: note || ''
     });
   }
 
   // carência total (capitaliza)
-  if(carType==='total' && carMonths>0){
+  if(carType === 'total' && carMonths > 0){
     for(let m=1;m<=carMonths;m++){
       const interest = balance * i;
       balance += interest;
-      if(system==='sacre'){ const factor = indexMap[m] || (1+reaj/100); balance *= factor; }
+      if(system === 'sacre'){ const factor = indexMap[m] || (1+reaj/100); balance *= factor; }
       push(m, balance - interest, interest, 0, 0, 0, balance);
     }
   }
 
-  // carência juros
-  if(carType==='juros' && carMonths>0){
+  // carência juros (interest only)
+  if(carType === 'juros' && carMonths > 0){
     for(let m=1;m<=carMonths;m++){
       const interest = balance * i;
       push(m, balance, interest, 0, interest, 0, balance);
     }
   }
 
-  const startMonth = (carType==='none')?1:(carMonths+1);
-  const amortMonths = totalMonths - ((carType==='none')?0:carMonths);
-  const M = Math.max(1,amortMonths);
+  const startMonth = (carType === 'none') ? 1 : (carMonths + 1);
+  const amortMonths = totalMonths - ((carType === 'none') ? 0 : carMonths);
+  const M = Math.max(1, amortMonths);
 
-  if(system==='compostos'){
+  // systems
+  if(system === 'compostos'){
     for(let m=1;m<=totalMonths;m++){
       const balStart = balance;
       const interest = balStart * i;
       balance = balStart + interest;
-      const payment = (m===totalMonths)?round(balance):0;
+      const payment = (m === totalMonths) ? round(balance) : 0;
       push(m, balStart, interest, 0, payment, 0, balance);
     }
-  } else if(system==='price'){
+  } else if(system === 'price'){
     const ann = i;
-    const payment = (ann===0)?(balance/M): balance * ann / (1 - Math.pow(1+ann, -M));
+    const payment = (ann === 0) ? (balance / M) : balance * ann / (1 - Math.pow(1+ann, -M));
     for(let k=0;k<M;k++){
       const m = startMonth + k;
       const balStart = balance;
@@ -400,22 +383,22 @@ function generateBankSchedule(opts){
       balance = balStart - amort;
       push(m, balStart, interest, amort, payment, 0, balance);
     }
-  } else if(system==='sac'){
+  } else if(system === 'sac'){
     const amortConst = balance / M;
     for(let k=0;k<M;k++){
-      const m=startMonth+k;
-      const balStart=balance;
+      const m = startMonth + k;
+      const balStart = balance;
       const interest = balStart * i;
       const amort = amortConst;
       const payment = interest + amort;
       balance = balStart - amort;
       push(m, balStart, interest, amort, payment, 0, balance);
     }
-  } else if(system==='sacre'){
+  } else if(system === 'sacre'){
     const amortConst = balance / M;
     for(let k=0;k<M;k++){
-      const m=startMonth+k;
-      const balStart=balance;
+      const m = startMonth + k;
+      const balStart = balance;
       const interest = balStart * i;
       const amort = amortConst;
       const payment = interest + amort;
@@ -424,11 +407,11 @@ function generateBankSchedule(opts){
       balance *= factor;
       push(m, balStart, interest, amort, payment, 0, balance);
     }
-  } else if(system==='simples'){
+  } else if(system === 'simples'){
     const amortConst = financed / M;
     for(let k=0;k<M;k++){
-      const m=startMonth+k;
-      const balStart=balance;
+      const m = startMonth + k;
+      const balStart = balance;
       const interest = financed * i;
       const amort = amortConst;
       const payment = interest + amort;
@@ -438,28 +421,29 @@ function generateBankSchedule(opts){
   }
 
   // discounts on last N installments
-  if(discountPct>0 && discountCount>0){
-    const amortRows = schedule.filter(s=>s.payment>0);
+  if(discountPct > 0 && discountCount > 0){
+    const amortRows = schedule.filter(s => s.payment > 0);
     const L = amortRows.length;
     for(let j=0;j<discountCount;j++){
-      const idx = L-1 - j; if(idx<0) break;
+      const idx = L-1 - j; if(idx < 0) break;
       const row = amortRows[idx];
-      const globalIdx = schedule.findIndex(s=>s.month===row.month);
+      const globalIdx = schedule.findIndex(s => s.month === row.month);
       const originalPayment = schedule[globalIdx].payment;
       const discountAmount = originalPayment * (discountPct/100);
       const newPayment = Math.max(0, originalPayment - discountAmount);
       const newAmort = newPayment - schedule[globalIdx].interest;
-      schedule[globalIdx].discount = roundMaker(opts.roundMode || 'round')(discountAmount);
-      schedule[globalIdx].payment = roundMaker(opts.roundMode || 'round')(newPayment);
-      schedule[globalIdx].amortization = roundMaker(opts.roundMode || 'round')(newAmort);
-      schedule[globalIdx].end = roundMaker(opts.roundMode || 'round')(schedule[globalIdx].balanceStart - newAmort);
-      // propagate
-      for(let t=globalIdx+1;t<schedule.length;t++){
-        schedule[t].balanceStart = roundMaker(opts.roundMode || 'round')(schedule[t-1].end);
-        schedule[t].interest = roundMaker(opts.roundMode || 'round')(schedule[t].balanceStart * i);
-        if(schedule[t].payment>0){
-          schedule[t].amortization = roundMaker(opts.roundMode || 'round')(schedule[t].payment - schedule[t].interest);
-          schedule[t].end = roundMaker(opts.roundMode || 'round')(schedule[t].balanceStart - schedule[t].amortization);
+      const rnd = roundMaker(opts.roundMode || 'round');
+      schedule[globalIdx].discount = rnd(discountAmount);
+      schedule[globalIdx].payment = rnd(newPayment);
+      schedule[globalIdx].amortization = rnd(newAmort);
+      schedule[globalIdx].end = rnd(schedule[globalIdx].balanceStart - newAmort);
+      // propagate forward
+      for(let t = globalIdx + 1; t < schedule.length; t++){
+        schedule[t].balanceStart = rnd(schedule[t-1].end);
+        schedule[t].interest = rnd(schedule[t].balanceStart * i);
+        if(schedule[t].payment > 0){
+          schedule[t].amortization = rnd(schedule[t].payment - schedule[t].interest);
+          schedule[t].end = rnd(schedule[t].balanceStart - schedule[t].amortization);
         } else {
           schedule[t].end = schedule[t].balanceStart;
         }
@@ -467,189 +451,175 @@ function generateBankSchedule(opts){
     }
   }
 
-  // real settlement: cut schedule at settleMonth and insert settlement row
-  if(settleMonth && settleMonth>0){
-    let pv=0;
+  // real settlement
+  if(settleMonth && settleMonth > 0){
+    let pv = 0;
     for(const r of schedule){
-      if(r.month>settleMonth && r.payment>0){
+      if(r.month > settleMonth && r.payment > 0){
         const t = r.month - settleMonth;
         pv += r.payment / Math.pow(1 + i, t);
       }
     }
     const settlementRaw = pv * (1 - (settleDiscountPct||0)/100);
-    const settlement = roundMaker(opts.roundMode || 'round')(settlementRaw);
-    const upto = schedule.filter(s=>s.month<=settleMonth);
-    const last = upto.length? upto[upto.length-1] : null;
-    const balanceBefore = last ? last.end : (schedule.length? schedule[schedule.length-1].end : roundMaker(opts.roundMode || 'round')(financed));
+    const rnd = roundMaker(opts.roundMode || 'round');
+    const settlement = rnd(settlementRaw);
+    const upto = schedule.filter(s => s.month <= settleMonth);
+    const last = upto.length ? upto[upto.length-1] : null;
+    const balanceBefore = last ? last.end : (schedule.length ? schedule[schedule.length-1].end : rnd(financed));
     const settleRow = {
       month: settleMonth + 0.1,
-      balanceStart: roundMaker(opts.roundMode || 'round')(balanceBefore),
+      balanceStart: rnd(balanceBefore),
       interest: 0,
       amortization: settlement,
       payment: settlement,
-      discount: roundMaker(opts.roundMode || 'round')(settleDiscountPct||0),
+      discount: rnd(settleDiscountPct||0),
       end: 0,
       note: 'Quitação antecipada (PV descontado)'
     };
     const final = upto.slice(); final.push(settleRow);
-    return { financed, schedule: final, settlement: { pv: roundMaker(opts.roundMode || 'round')(pv), settlement } };
+    return { financed, schedule: final, settlement: { pv: rnd(pv), settlement } };
   }
 
   return { financed, schedule };
 }
 
-/* fill tables */
+// fill tables
 function fillTable(selector, schedule){
-  const tbody = document.querySelector(selector+' tbody');
-  tbody.innerHTML='';
-  schedule.forEach(r=>{
-    const tr=document.createElement('tr');
-    const monthLabel = Number.isInteger(r.month)?`M${r.month}`:`M${Math.floor(r.month)} (Quitação)`;
-    const note = r.note?` — ${r.note}`:'';
+  const tbody = document.querySelector(selector + ' tbody');
+  tbody.innerHTML = '';
+  schedule.forEach(r => {
+    const tr = document.createElement('tr');
+    const monthLabel = Number.isInteger(r.month) ? `M${r.month}` : `M${Math.floor(r.month)} (Quitação)`;
+    const note = r.note ? ` — ${r.note}` : '';
     tr.innerHTML = `<td>${monthLabel}${note}</td>
       <td>${fmt(r.balanceStart)}</td>
       <td>${fmt(r.interest)}</td>
       <td>${fmt(r.amortization)}</td>
       <td>${fmt(r.payment)}</td>
-      <td>${r.discount && typeof r.discount==='number' && r.discount>0 ? (r.note ? (r.discount) : fmt(r.discount)) : '-'}</td>
+      <td>${r.discount && typeof r.discount === 'number' && r.discount>0 ? (r.note ? (r.discount) : fmt(r.discount)) : '-'}</td>
       <td>${fmt(r.end)}</td>`;
     tbody.appendChild(tr);
   });
 }
 
-/* chart render */
+// render chart
 function renderChart(scheduleA, scheduleB, labelA, labelB){
-  const maxM = Math.max(scheduleA.length?Math.ceil(scheduleA[scheduleA.length-1].month):0, scheduleB.length?Math.ceil(scheduleB[scheduleB.length-1].month):0);
-  const labels=[]; for(let i=1;i<=Math.max(24,maxM);i++) labels.push('M'+i);
+  const maxM = Math.max(scheduleA.length ? Math.ceil(scheduleA[scheduleA.length-1].month) : 0, scheduleB.length ? Math.ceil(scheduleB[scheduleB.length-1].month) : 0);
+  const labels = []; for(let i=1;i<=Math.max(24,maxM);i++) labels.push('M'+i);
   const balA = labels.map((l,i)=>{ const m=i+1; const row = scheduleA.find(r=>Math.floor(r.month)===m); return row?row.end:(scheduleA.length?scheduleA[scheduleA.length-1].end:0); });
   const balB = labels.map((l,i)=>{ const m=i+1; const row = scheduleB.find(r=>Math.floor(r.month)===m); return row?row.end:(scheduleB.length?scheduleB[scheduleB.length-1].end:0); });
 
-  const ctx=document.getElementById('mainChart').getContext('2d');
-  if(mainChart){ mainChart.data.labels=labels; mainChart.data.datasets[0].data = balA; mainChart.data.datasets[1].data = balB; mainChart.update(); return; }
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  if(mainChart){ mainChart.data.labels = labels; mainChart.data.datasets[0].data = balA; mainChart.data.datasets[1].data = balB; mainChart.update(); return; }
   mainChart = new Chart(ctx, {
-    type:'line',
-    data:{ labels, datasets:[
-      { label: labelA, data: balA, borderColor: '#FFD700', tension:0.25, pointRadius:0 },
-      { label: labelB, data: balB, borderColor: '#00BFFF', tension:0.25, pointRadius:0 }
-    ] },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:'var(--accent)'}}}, scales:{x:{ticks:{color:'var(--accent)'}}, y:{ticks:{color:'var(--accent)'}} }
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: labelA, data: balA, borderColor: '#FFD700', tension: 0.25, pointRadius: 0 },
+        { label: labelB, data: balB, borderColor: '#00BFFF', tension: 0.25, pointRadius: 0 }
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:'#e6e6e6'}}}, scales:{x:{ticks:{color:'#e6e6e6'}}, y:{ticks:{color:'#e6e6e6'}} }
   });
 }
 
-/* export helpers */
-function exportXlsx(objA, objB, meta){
-  const wb = XLSX.utils.book_new();
-  const sheetA = objA.schedule.map(r=>({Mes:r.month,SaldoInicial:r.balanceStart,Juros:r.interest,Amortizacao:r.amortization,Prestacao:r.payment,Desconto:r.discount||0,SaldoFinal:r.end,Nota:r.note||''}));
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(sheetA), meta.titleA || 'TabelaA');
-  const sheetB = objB.schedule.map(r=>({Mes:r.month,SaldoInicial:r.balanceStart,Juros:r.interest,Amortizacao:r.amortization,Prestacao:r.payment,Desconto:r.discount||0,SaldoFinal:r.end,Nota:r.note||''}));
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(sheetB), meta.titleB || 'TabelaB');
-  const metaArr = [['APSPARCEIROS - Simulação v2.2'],['Data',meta.date],['Valor',meta.amount],['Entrada',meta.downpayment],['Prazo',meta.months],['Taxa mensal',(meta.rateMonthly*100).toFixed(6)+'%'],['SistemaA',meta.titleA],['SistemaB',meta.titleB]];
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(metaArr),'Resumo');
-  const out = XLSX.write(wb,{bookType:'xlsx',type:'array'}); saveAs(new Blob([out],{type:'application/octet-stream'}),'simulacao_v2.2.xlsx');
-}
-function exportCsv(schedule, name){
-  const header=['Mes','SaldoInicial','Juros','Amortizacao','Prestacao','Desconto','SaldoFinal','Nota'];
-  const rows = schedule.map(r=>[r.month,r.balanceStart,r.interest,r.amortization,r.payment,r.discount||0,r.end, (r.note||'') ]);
-  const csv = [header.join(','), ...rows.map(r=> r.map(c => (typeof c==='string' && c.includes(',')) ? `"${c}"` : c ).join(',')) ].join('\n');
-  const blob = new Blob([csv],{type:'text/csv'}); saveAs(blob, name);
-}
-async function exportPdf(element, meta, settleInfo){
-  const { jsPDF } = window.jspdf;
-  const canvas = await html2canvas(element,{scale:1});
-  const img = canvas.toDataURL('image/png');
-  const pdf = new jsPDF('landscape','pt','a4'); const w=pdf.internal.pageSize.getWidth(), h=pdf.internal.pageSize.getHeight();
-  pdf.setFontSize(12); pdf.text('APSPARCEIROS - Simulação v2.2',40,30); pdf.text(meta.date,40,46);
-  if(settleInfo) pdf.text('Quitação PV='+fmt(settleInfo.pv)+' | Valor negociado='+fmt(settleInfo.settlement),40,62);
-  pdf.addImage(img,'PNG',40,80,w-80,h-140); pdf.save('simulacao_v2.2.pdf');
-}
+// exports
+function exportXlsx(objA, objB, meta){ const wb = XLSX.utils.book_new(); const sheetA = objA.schedule.map(r=>({Mes:r.month,SaldoInicial:r.balanceStart,Juros:r.interest,Amortizacao:r.amortization,Prestacao:r.payment,Desconto:r.discount||0,SaldoFinal:r.end,Nota:r.note||''})); XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(sheetA), meta.titleA || 'TabelaA'); const sheetB = objB.schedule.map(r=>({Mes:r.month,SaldoInicial:r.balanceStart,Juros:r.interest,Amortizacao:r.amortization,Prestacao:r.payment,Desconto:r.discount||0,SaldoFinal:r.end,Nota:r.note||''})); XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(sheetB), meta.titleB || 'TabelaB'); const metaArr = [['APSPARCEIROS - Simulação v2.2 (fix)'],['Data',meta.date],['Valor',meta.amount],['Entrada',meta.downpayment],['Prazo',meta.months],['Taxa mensal',(meta.rateMonthly*100).toFixed(6)+'%'],['SistemaA',meta.titleA],['SistemaB',meta.titleB]]; XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(metaArr),'Resumo'); const out = XLSX.write(wb,{bookType:'xlsx',type:'array'}); saveAs(new Blob([out],{type:'application/octet-stream'}),'simulacao_v2.2_fix.xlsx'); }
+function exportCsv(schedule, name){ const header=['Mes','SaldoInicial','Juros','Amortizacao','Prestacao','Desconto','SaldoFinal','Nota']; const rows = schedule.map(r=>[r.month,r.balanceStart,r.interest,r.amortization,r.payment,r.discount||0,r.end, (r.note||'') ]); const csv = [header.join(','), ...rows.map(r=> r.map(c => (typeof c==='string' && c.includes(',')) ? `"${c}"` : c ).join(',')) ].join('\n'); const blob = new Blob([csv],{type:'text/csv'}); saveAs(blob, name); }
+async function exportPdf(element, meta, settleInfo){ const { jsPDF } = window.jspdf; const canvas = await html2canvas(element,{scale:1}); const img = canvas.toDataURL('image/png'); const pdf = new jsPDF('landscape','pt','a4'); const w=pdf.internal.pageSize.getWidth(), h=pdf.internal.pageSize.getHeight(); pdf.setFontSize(12); pdf.text('APSPARCEIROS - Simulação v2.2 (fix)',40,30); pdf.text(meta.date,40,46); if(settleInfo) pdf.text('Quitação PV='+fmt(settleInfo.pv)+' | Valor negociado='+fmt(settleInfo.settlement),40,62); pdf.addImage(img,'PNG',40,80,w-80,h-140); pdf.save('simulacao_v2.2_fix.pdf'); }
 
-/* calculate */
-document.getElementById('calcBtn').addEventListener('click',()=>{
-  const amount = toNum(document.getElementById('loanAmount').value);
-  const down = toNum(document.getElementById('downPayment').value);
-  const months = Math.max(1, parseInt(document.getElementById('termMonths').value)||1);
-  const rateVal = toNum(document.getElementById('rateValue').value);
-  const ratePeriod = document.getElementById('ratePeriod').value;
-  const auto = document.getElementById('autoConvert').value === '1';
-  const sysA = document.getElementById('systemA').value;
-  const sysB = document.getElementById('systemB').value;
-  const indexType = document.getElementById('indexSelect').value;
-  const carType = document.getElementById('carenciaType').value;
-  const carMonths = Math.max(0, parseInt(document.getElementById('carenciaMonths').value)||0);
-  const discountPct = toNum(document.getElementById('discountPercent').value);
-  const discountCount = Math.max(0, parseInt(document.getElementById('discountCount').value)||0);
-  const settleMonth = Math.max(0, parseInt(document.getElementById('settleMonth').value)||0);
-  const settleDiscountPct = toNum(document.getElementById('settleDiscountPct').value);
-  const roundMode = document.getElementById('roundMode').value;
+// main calculate handler
+document.getElementById('btnCalc').addEventListener('click', ()=>{
+  try{
+    const amount = toNum(document.getElementById('loanAmount').value);
+    const down = toNum(document.getElementById('downPayment').value);
+    const months = Math.max(1, parseInt(document.getElementById('termMonths').value)||1);
+    const rateVal = toNum(document.getElementById('rateValue').value);
+    const ratePeriod = document.getElementById('ratePeriod').value;
+    const auto = document.getElementById('autoConvert').value === '1';
+    const sysA = document.getElementById('systemA').value;
+    const sysB = document.getElementById('systemB').value;
+    const indexType = document.getElementById('indexSelect').value;
+    const carType = document.getElementById('carenciaType').value;
+    const carMonths = Math.max(0, parseInt(document.getElementById('carenciaMonths').value)||0);
+    const discountPct = toNum(document.getElementById('discountPercent').value);
+    const discountCount = Math.max(0, parseInt(document.getElementById('discountCount').value)||0);
+    const settleMonth = Math.max(0, parseInt(document.getElementById('settleMonth').value)||0);
+    const settleDiscountPct = toNum(document.getElementById('settleDiscountPct').value);
+    const roundMode = document.getElementById('roundMode').value;
 
-  const monthlyRate = toMonthlyRate(rateVal, ratePeriod, auto);
-  const idxMap = indexSeries;
+    const monthlyRate = toMonthlyRate(rateVal, ratePeriod, auto);
+    const idxMap = indexSeries;
 
-  // build options
-  const optsA = { amount, down, months, rate: monthlyRate, system: sysA, carType, carMonths, indexMap: idxMap, reaj:0, discountPct, discountCount, settleMonth, settleDiscountPct, roundMode };
-  const optsB = { amount, down, months, rate: monthlyRate, system: sysB, carType, carMonths, indexMap: idxMap, reaj:0, discountPct, discountCount, settleMonth, settleDiscountPct, roundMode };
+    const optsA = { amount, down, months, rate: monthlyRate, system: sysA, carType, carMonths, indexMap: idxMap, reaj:0, discountPct, discountCount, settleMonth, settleDiscountPct, roundMode };
+    const optsB = { amount, down, months, rate: monthlyRate, system: sysB, carType, carMonths, indexMap: idxMap, reaj:0, discountPct, discountCount, settleMonth, settleDiscountPct, roundMode };
 
-  const resA = generateBankSchedule(optsA);
-  const resB = generateBankSchedule(optsB);
+    const resA = generateBankSchedule(optsA);
+    const resB = generateBankSchedule(optsB);
 
-  fillTable('#tableA', resA.schedule);
-  fillTable('#tableB', resB.schedule);
-  document.getElementById('titleA').innerText = 'A — ' + (sysA||'A').toUpperCase();
-  document.getElementById('titleB').innerText = 'B — ' + (sysB||'B').toUpperCase();
+    fillTable('#tableA', resA.schedule);
+    fillTable('#tableB', resB.schedule);
+    document.getElementById('titleA').innerText = 'A — ' + (sysA||'A').toUpperCase();
+    document.getElementById('titleB').innerText = 'B — ' + (sysB||'B').toUpperCase();
 
-  renderChart(resA.schedule, resB.schedule, 'A-'+sysA.toUpperCase(), 'B-'+sysB.toUpperCase());
+    renderChart(resA.schedule, resB.schedule, 'A-'+sysA.toUpperCase(), 'B-'+sysB.toUpperCase());
 
-  // KPIs
-  const totInterestA = resA.schedule.reduce((s,x)=>s+Number(x.interest),0);
-  const avgPayA = resA.schedule.length? resA.schedule.reduce((s,x)=>s+Number(x.payment),0)/resA.schedule.length : 0;
-  document.getElementById('kpiPaymentA').innerText = fmt(avgPayA);
-  document.getElementById('kpiTotalInterestA').innerText = fmt(totInterestA);
-  document.getElementById('kpiFinancedA').innerText = fmt(resA.financed);
+    // KPIs
+    const totInterestA = resA.schedule.reduce((s,x)=>s+Number(x.interest),0);
+    const avgPayA = resA.schedule.length? resA.schedule.reduce((s,x)=>s+Number(x.payment),0)/resA.schedule.length : 0;
+    document.getElementById('kpiPaymentA').innerText = fmt(avgPayA);
+    document.getElementById('kpiTotalInterestA').innerText = fmt(totInterestA);
+    document.getElementById('kpiFinancedA').innerText = fmt(resA.financed);
 
-  lastA = resA; lastB = resB; lastMeta = { date: new Date().toLocaleString('pt-BR',{year:'numeric',month:'short',day:'numeric'}), amount, downpayment:down, months, rateMonthly:monthlyRate, titleA:sysA, titleB:sysB };
+    lastA = resA; lastB = resB; lastMeta = { date: new Date().toLocaleString('pt-BR',{year:'numeric',month:'short',day:'numeric'}), amount, downpayment:down, months, rateMonthly:monthlyRate, titleA:sysA, titleB:sysB };
 
-  if(resA.settlement){
-    lastSettle = resA.settlement;
-    document.getElementById('settleResult').innerText = `Quitação no mês ${settleMonth}: PV dos fluxos = ${fmt(resA.settlement.pv)}; Valor com negociação = ${fmt(resA.settlement.settlement)}`;
-  } else {
-    lastSettle = null;
-    document.getElementById('settleResult').innerText = 'Nenhuma quitação simulada.';
+    if(resA.settlement){
+      lastSettle = resA.settlement;
+      document.getElementById('settleResult').innerText = `Quitação no mês ${settleMonth}: PV dos fluxos = ${fmt(resA.settlement.pv)}; Valor com negociação = ${fmt(resA.settlement.settlement)}`;
+    } else {
+      lastSettle = null;
+      document.getElementById('settleResult').innerText = 'Nenhuma quitação simulada.';
+    }
+  }catch(err){
+    console.error('Erro durante cálculo', err);
+    alert('Erro no cálculo (veja console F12): ' + err.message);
   }
 });
 
-/* exports */
-document.getElementById('exportXlsx').addEventListener('click', ()=> {
+// exports events
+document.getElementById('btnExportXlsx')?.addEventListener('click', ()=> {
   if(!lastA) return alert('Gere a simulação primeiro.');
   exportXlsx(lastA, lastB||{schedule:[]}, lastMeta);
 });
-document.getElementById('exportCsv').addEventListener('click', ()=> {
+document.getElementById('btnExportCsv')?.addEventListener('click', ()=> {
   if(!lastA) return alert('Gere a simulação primeiro.');
   exportCsv(lastA.schedule,'simulacao_A.csv');
   if(lastB) exportCsv(lastB.schedule,'simulacao_B.csv');
 });
-document.getElementById('exportPdf').addEventListener('click', async ()=> {
+document.getElementById('btnExportPdf')?.addEventListener('click', async ()=> {
   if(!lastA) return alert('Gere a simulação primeiro.');
   const elem = document.querySelector('.app');
   await exportPdf(elem, lastMeta, lastSettle);
 });
-document.getElementById('printBtn').addEventListener('click', ()=> window.print());
+document.getElementById('btnPrint')?.addEventListener('click', ()=> window.print());
 
-/* reset */
-document.getElementById('resetBtn').addEventListener('click', ()=> {
+// reset
+document.getElementById('btnReset').addEventListener('click', ()=> {
   if(!confirm('Restaurar valores iniciais?')) return;
   location.reload();
 });
 
-/* theme */
+// theme
 document.getElementById('themeSelect').addEventListener('change', e=>{
-  if(e.target.value==='light'){ document.documentElement.classList.add('light'); document.querySelectorAll('input, select').forEach(x=>x.classList.add('light')); } else { document.documentElement.classList.remove('light'); document.querySelectorAll('input, select').forEach(x=>x.classList.remove('light')); }
+  if(e.target.value === 'light'){ document.documentElement.classList.add('light'); document.querySelectorAll('input, select').forEach(x=>x.classList.add('light')); } else { document.documentElement.classList.remove('light'); document.querySelectorAll('input, select').forEach(x=>x.classList.remove('light')); }
 });
 
-/* auto-run initial */
+// auto-run initial
 window.addEventListener('load', ()=> {
   document.documentElement.classList.remove('light');
   document.getElementById('themeSelect').value='dark';
-  setTimeout(()=>document.getElementById('calcBtn').click(),120);
+  setTimeout(()=>document.getElementById('btnCalc').click(),120);
 });
 </script>
 </body>
