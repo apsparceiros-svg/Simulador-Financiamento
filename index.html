@@ -324,77 +324,84 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
     </div>
   </div>
 
-  <!-- COMPARATIVO E TABELAS -->
-  <div>
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><strong>Comparativo / Tabelas</strong><div class="small">Resultados lado a lado</div></div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button id="btnTogglePrint" class="button ghost">Imprimir</button>
-        </div>
-      </div>
-
-      <div style="margin-top:12px" class="chart-area">
-        <canvas id="compareChart" style="width:100%;height:100%"></canvas>
-      </div>
-
-      <div style="margin-top:12px" class="table-wrap print-area" id="tableWrap">
-        <!-- ============================ -->
-<!-- COMPARAÇÃO DE SISTEMAS (TABELAS) -->
 <!-- ============================ -->
-<div class="comparison" id="comparisonWrap">
+<!-- COMPARATIVO E TABELAS -->
+<!-- ============================ -->
+<div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <strong>Comparativo / Tabelas</strong>
+        <div class="small">Resultados lado a lado</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="btnTogglePrint" class="button ghost">Imprimir</button>
+      </div>
+    </div>
 
-  <!-- ====== TABELA A ====== -->
-  <div>
-    <h4 id="titleA">Sistema A</h4>
-    <div class="table-scroll">
-      <table id="tableA">
-        <thead>
-          <tr>
-            <th>Mês</th>
-            <th>Saldo Inicial</th>
-            <th>Juros</th>
-            <th>Amortização</th>
-            <th>Prestação</th>
-            <th>Desconto</th>
-            <th>Saldo Final</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- As linhas serão preenchidas via JavaScript -->
-          <!-- Exemplo:
-          <tr><td>1</td><td>100.000</td><td>800</td><td>2.000</td><td>2.800</td><td>0</td><td>98.000</td></tr>
-          -->
-        </tbody>
-      </table>
+    <!-- ====== GRÁFICO ====== -->
+    <div style="margin-top:12px" class="chart-area">
+      <canvas id="compareChart" style="width:100%;height:100%"></canvas>
+    </div>
+
+    <!-- ====== TABELAS ====== -->
+    <div style="margin-top:12px" class="table-wrap print-area" id="tableWrap">
+
+      <div class="comparison" id="comparisonWrap">
+
+        <!-- Tabela A -->
+        <div>
+          <h4 id="titleA">Sistema A</h4>
+          <div class="table-scroll">
+            <table id="tableA">
+              <thead>
+                <tr>
+                  <th>Mês</th>
+                  <th>Saldo Inicial</th>
+                  <th>Juros</th>
+                  <th>Amortização</th>
+                  <th>Prestação</th>
+                  <th>Desconto</th>
+                  <th>Saldo Final</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tabela B -->
+        <div>
+          <h4 id="titleB">Sistema B</h4>
+          <div class="table-scroll">
+            <table id="tableB">
+              <thead>
+                <tr>
+                  <th>Mês</th>
+                  <th>Saldo Inicial</th>
+                  <th>Juros</th>
+                  <th>Amortização</th>
+                  <th>Prestação</th>
+                  <th>Desconto</th>
+                  <th>Saldo Final</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ====== RODAPÉ DE OBSERVAÇÕES ====== -->
+      <div style="margin-top:12px">
+        <h4>Quitação antecipada / Simulação</h4>
+        <div id="settleResult" class="small">Nenhuma quitação simulada.</div>
+      </div>
+
     </div>
   </div>
-
-  <!-- ====== TABELA B ====== -->
-  <div>
-    <h4 id="titleB">Sistema B</h4>
-    <div class="table-scroll">
-      <table id="tableB">
-        <thead>
-          <tr>
-            <th>Mês</th>
-            <th>Saldo Inicial</th>
-            <th>Juros</th>
-            <th>Amortização</th>
-            <th>Prestação</th>
-            <th>Desconto</th>
-            <th>Saldo Final</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- As linhas serão preenchidas via JavaScript -->
-        </tbody>
-      </table>
-    </div>
-  </div>
-
 </div>
-
 <script>
 /* Utilities & state */
 document.getElementById('nowDate').innerText = new Date().toLocaleString('pt-BR',{year:'numeric',month:'short',day:'numeric'});
