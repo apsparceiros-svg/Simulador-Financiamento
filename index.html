@@ -20,40 +20,269 @@
 *{box-sizing:border-box;font-family:Inter,system-ui,Arial;color:var(--accent);margin:0;padding:0;}
 html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-font-smoothing:antialiased;}
 
-/* layout */
-.container{max-width:1400px;margin:20px auto;padding:20px;display:grid;grid-template-columns:1fr 2fr;gap:20px;justify-content:center;}
+/* --- CONTAINER RESPONSIVO --- */
+.container{
+  max-width:1400px;
+  margin:20px auto;
+  padding:20px;
+  display:grid;
+  grid-template-columns:1fr 2fr;
+  gap:20px;
+  justify-content:center;
+}
+
+/* Cards, controles e KPIs */
 .card{background:var(--card);padding:20px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.2);border:1px solid var(--glass);}
 .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
 .brand{font-weight:800;color:var(--gold);font-size:20px;letter-spacing:1px;}
 .small{font-size:13px;color:var(--muted);}
-
-/* controls */
 .controls label{display:block;font-size:13px;color:var(--muted);margin-top:12px;font-weight:500;}
-.controls input[type=text],.controls input[type=number],.controls select{background:var(--panel);color:var(--accent);border:1px solid var(--glass);padding:12px 10px;border-radius:10px;width:100%;margin-top:6px;transition:all 0.2s;}
+.controls input[type=text],.controls input[type=number],.controls select{
+  background:var(--panel);color:var(--accent);border:1px solid var(--glass);padding:12px 10px;border-radius:10px;width:100%;margin-top:6px;transition:all 0.2s;
+}
+.controls input:focus,.controls select:focus{border-color:var(--gold);outline:none;box-shadow:0 0 8px var(--gold);}
 .button{background:var(--gold);color:#0b0b0b;border:none;padding:12px 18px;border-radius:10px;cursor:pointer;font-weight:700;transition:all 0.2s;}
+.button:hover{background:#e0a800;}
 .button.ghost{background:transparent;border:1px solid var(--glass);color:var(--accent);}
+.button.ghost:hover{background:var(--glass);}
+.kpis{display:flex;gap:15px;flex-wrap:wrap;margin-top:12px;}
+.kpi{background:var(--panel);padding:15px;border-radius:10px;min-width:160px;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,0.15);}
+.kpi .small{margin-bottom:8px;}
 
-/* tables / chart */
-.table-wrap { border-radius: 10px; border: 1px solid var(--glass); background: var(--panel); padding: 0; }
-.table-scroll { max-height: 520px; overflow-y: auto; overflow-x: hidden; display: block; border-radius: 0 0 10px 10px; position: relative; }
-table { width:100%; border-collapse:collapse; font-size:13px; position:relative; }
-thead th { position: sticky; top: 0; z-index: 2; background: inherit; padding:8px; text-align:right; }
-tbody td { padding:8px; text-align:right; border-bottom:1px dashed rgba(255,255,255,0.05); }
+/* ===================== */
+/* CORREÇÃO DO SCROLL    */
+/* ===================== */
+
+/* Contêiner externo da tabela */
+.table-wrap {
+  border-radius: 10px;
+  border: 1px solid var(--glass);
+  background: var(--panel);
+  padding: 0;
+}
+
+/* Contêiner de rolagem (somente corpo rola) */
+.table-scroll {
+  max-height: 520px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: block;
+  border-radius: 0 0 10px 10px;
+  position: relative; /* contexto para sticky */
+}
+
+/* Tabelas */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  position: relative; /* garante contexto do sticky */
+}
+
+/* Cabeçalhos fixos */
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: inherit;
+  padding: 8px;
+  text-align: right;
+}
+
+tbody td {
+  padding: 8px;
+  text-align: right;
+  border-bottom: 1px dashed rgba(255,255,255,0.05);
+}
+
 td:first-child,th:first-child{text-align:left;}
+tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 .chart-area{height:400px;margin-top:12px;}
-.comparison{ display:grid; grid-template-columns:1fr 1fr; gap:20px; overflow-x:auto; }
 
-#titleA { background-color:#c9a84b; color:#0b0b0b; padding:10px 15px; border-radius:12px 12px 0 0; font-weight:800; text-align:center;}
-#titleB { background-color:#2b6cb0; color:#ffffff; padding:10px 15px; border-radius:12px 12px 0 0; font-weight:800; text-align:center;}
+/* Comparativo lado a lado */
+.comparison{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  overflow-x:auto;
+}
 
-/* small responsive */
-@media(max-width:1100px){ .container{grid-template-columns:1fr;padding:10px;} .comparison{grid-template-columns:1fr;} }
+/* Theme toggle */
+.theme-toggle{display:flex;gap:6px;align-items:center;}
+
+/* Footer */
+.footer{margin-top:12px;color:var(--muted);font-size:13px;}
+
+/* --- MEDIA QUERIES --- */
+@media(max-width:1100px){
+  .container{
+    grid-template-columns:1fr;
+    padding:10px;
+  }
+  .comparison{
+    grid-template-columns:1fr;
+  }
+}
+
+/* ======================== */
+/* MELHORIAS PREMIUM TABELAS */
+/* ======================== */
+
+/* --- TÍTULOS DAS TABELAS --- */
+#titleA {
+  background-color: #c9a84b;
+  color: #0b0b0b;
+  padding: 10px 15px;
+  border-radius: 12px 12px 0 0;
+  font-weight: 800;
+  text-align: center;
+  font-size: 16px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+  margin-bottom: 0;
+}
+
+#titleB {
+  background-color: #2b6cb0;
+  color: #ffffff;
+  padding: 10px 15px;
+  border-radius: 12px 12px 0 0;
+  font-weight: 800;
+  text-align: center;
+  font-size: 16px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+  margin-bottom: 0;
+}
+
+/* --- BORDAS E FUNDO DAS TABELAS --- */
+#tableA {
+  border: 2px solid #c9a84b;
+  border-radius: 0 0 12px 12px;
+  background-color: rgba(201, 168, 75, 0.07);
+  box-shadow: inset 0 0 8px rgba(201,168,75,0.15);
+  transition: all 0.2s;
+}
+
+#tableB {
+  border: 2px solid #2b6cb0;
+  border-radius: 0 0 12px 12px;
+  background-color: rgba(43, 108, 176, 0.07);
+  box-shadow: inset 0 0 8px rgba(43,108,176,0.15);
+  transition: all 0.2s;
+}
+
+/* --- CABEÇALHOS --- */
+#tableA thead th {
+  background-color: #f5f0d6;
+  color: #0b0b0b;
+  font-weight: 700;
+  text-transform: uppercase;
+  z-index: 3;
+}
+
+#tableB thead th {
+  background-color: #cfe0f4;
+  color: #0b1220;
+  font-weight: 700;
+  text-transform: uppercase;
+  z-index: 3;
+}
+
+/* --- LINHAS --- */
+#tableA tbody tr:nth-child(odd) {
+  background-color: rgba(201, 168, 75, 0.08);
+}
+
+#tableB tbody tr:nth-child(odd) {
+  background-color: rgba(43, 108, 176, 0.08);
+}
+
+#tableA tbody tr:hover, #tableB tbody tr:hover {
+  background-color: rgba(255,255,255,0.1);
+  transform: scale(1.01);
+  transition: all 0.15s;
+}
+
+/* --- CÉLULAS --- */
+#tableA tbody td, #tableB tbody td {
+  padding: 10px 8px;
+  text-align: right;
+  transition: all 0.15s;
+}
+
+#tableA tbody td:first-child, #tableB tbody td:first-child {
+  text-align: left;
+  font-weight: 600;
+}
+
+/* --- RODAPÉ --- */
+#tableA tbody tr:last-child td, #tableB tbody tr:last-child td {
+  border-bottom: none;
+}
+  /* ====== TOTAIS COMPARATIVOS ====== */
+.totals-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.totals-card {
+  padding: 15px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.totals-card h4 {
+  margin-bottom: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+
+.totals-card.gold {
+  border-left: 4px solid #c9a84b;
+  background-color: rgba(201, 168, 75, 0.08);
+}
+
+.totals-card.blue {
+  border-left: 4px solid #2b6cb0;
+  background-color: rgba(43, 108, 176, 0.08);
+}
+
+.totals-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.totals-grid div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.totals-grid span {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.totals-grid strong {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* Responsivo */
+@media(max-width:900px){
+  .totals-comparison {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
 </head>
 <body>
 <div class="container" id="appRoot">
 
-  <!-- LEFT: CONTROLES -->
+  <!-- CONTROLES E KPIs -->
   <div>
     <div class="card header">
       <div>
@@ -62,7 +291,7 @@ td:first-child,th:first-child{text-align:left;}
       </div>
       <div style="text-align:right">
         <div class="small">Branding: APSPARCEIROS • <span id="nowDate"></span></div>
-        <div style="margin-top:8px">
+        <div class="theme-toggle" style="margin-top:8px">
           <label class="small">Tema</label>
           <select id="themeSelect" style="margin-left:8px">
             <option value="dark">Escuro / Dourado</option>
@@ -87,10 +316,8 @@ td:first-child,th:first-child{text-align:left;}
           <option value="a.m">% a.m.</option>
         </select>
       </div>
-
       <label>Conversão anual → mensal</label>
       <select id="autoConvert"><option value="1">Sim (geométrica)</option><option value="0">Não (divisão)</option></select>
-
       <label>Sistema A</label>
       <select id="systemA">
         <option value="price">PRICE</option>
@@ -99,7 +326,6 @@ td:first-child,th:first-child{text-align:left;}
         <option value="simples">Juros Simples</option>
         <option value="compostos">Juros Compostos (acum.)</option>
       </select>
-
       <label>Sistema B</label>
       <select id="systemB">
         <option value="sac">SAC</option>
@@ -108,26 +334,23 @@ td:first-child,th:first-child{text-align:left;}
         <option value="simples">Juros Simples</option>
         <option value="compostos">Juros Compostos (acum.)</option>
       </select>
-
       <label>Correção monetária (SACRE)</label>
       <select id="indexSelect"><option value="none">Nenhuma</option><option value="TR">TR (exemplo)</option><option value="IPCA">IPCA</option><option value="INCC">INCC</option></select>
-
       <label>Carência</label>
       <select id="carenciaType"><option value="none">Sem carência</option><option value="juros">Paga só juros</option><option value="total">Carência total (capitaliza)</option></select>
       <label>Meses de carência</label>
       <input id="carenciaMonths" type="number" min="0" step="1" value="0">
-
       <label>Base de contagem (dias)</label>
       <select id="dayCount"><option value="30/360">30/360</option><option value="actual/360">actual/360</option></select>
 
-      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.05);margin:12px 0">
+      <hr style="border:none;border-top:1px solid var(--glass);margin:12px 0">
 
       <label>Desconto nas últimas parcelas (%)</label>
       <input id="discountPercent" type="number" min="0" step="0.01" value="0">
       <label>Quantidade de parcelas com desconto</label>
       <input id="discountCount" type="number" min="0" step="1" value="0">
 
-      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.05);margin:12px 0">
+      <hr style="border:none;border-top:1px solid var(--glass);margin:12px 0">
 
       <label>Quitação antecipada</label>
       <div style="display:flex;gap:8px">
@@ -147,103 +370,122 @@ td:first-child,th:first-child{text-align:left;}
         <button id="btnExportXlsx" class="button ghost">Exportar Excel</button>
         <button id="btnExportPdf" class="button ghost">Gerar PDF</button>
       </div>
-      <div class="small" style="margin-top:10px">Observação: quitação é real — a tabela recebe linha de quitação com PV descontado.</div>
+      <div class="footer">Observação: neste modo a quitação é real — a tabela é encerrada no mês de quitação e uma linha de quitação é inserida com o valor presente descontado.</div>
     </div>
   </div>
 
-  <!-- RIGHT: COMPARAÇÃO E TABELAS -->
-  <div>
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><strong>Comparativo / Tabelas</strong><div class="small">Resultados lado a lado</div></div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button id="btnTogglePrint" class="button ghost">Imprimir</button>
-        </div>
+<!-- ============================ -->
+<!-- COMPARATIVO E TABELAS -->
+<!-- ============================ -->
+<div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <strong>Comparativo / Tabelas</strong>
+        <div class="small">Resultados lado a lado</div>
       </div>
-
-      <div style="margin-top:12px" class="chart-area">
-        <canvas id="compareChart" style="width:100%;height:100%"></canvas>
-      </div>
-
-      <div style="margin-top:12px" class="table-wrap print-area" id="tableWrap">
-        <div class="comparison" id="comparisonWrap">
-          <div>
-            <h4 id="titleA">Sistema A</h4>
-            <div class="table-scroll">
-              <table id="tableA">
-                <thead>
-                  <tr><th>Mês</th><th>Saldo Inicial</th><th>Juros</th><th>Amortização</th><th>Prestação</th><th>Desconto</th><th>Saldo Final</th></tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-
-          <div>
-            <h4 id="titleB">Sistema B</h4>
-            <div class="table-scroll">
-              <table id="tableB">
-                <thead>
-                  <tr><th>Mês</th><th>Saldo Inicial</th><th>Juros</th><th>Amortização</th><th>Prestação</th><th>Desconto</th><th>Saldo Final</th></tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <div class="totals-comparison" style="margin-top:20px">
-          <div class="totals-card gold">
-            <h4>Totais — Sistema A</h4>
-            <div class="totals-grid">
-              <div><span>Prestação média (A)</span><strong id="avgInstallmentA">R$ 0,00</strong></div>
-              <div><span>Juros totais (A)</span><strong id="totalInterestA">R$ 0,00</strong></div>
-              <div><span>Saldo financiado (A)</span><strong id="financedA">R$ 0,00</strong></div>
-            </div>
-          </div>
-          <div class="totals-card blue">
-            <h4>Totais — Sistema B</h4>
-            <div class="totals-grid">
-              <div><span>Prestação média (B)</span><strong id="avgInstallmentB">R$ 0,00</strong></div>
-              <div><span>Juros totais (B)</span><strong id="totalInterestB">R$ 0,00</strong></div>
-              <div><span>Saldo financiado (B)</span><strong id="financedB">R$ 0,00</strong></div>
-            </div>
-          </div>
-        </div>
-
-        <div style="margin-top:20px">
-          <h4>Quitação antecipada / Simulação</h4>
-          <div id="settleResult" class="small">Nenhuma quitação simulada.</div>
-        </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="btnTogglePrint" class="button ghost">Imprimir</button>
       </div>
     </div>
+
+    <!-- ====== GRÁFICO ====== -->
+    <div style="margin-top:12px" class="chart-area">
+      <canvas id="compareChart" style="width:100%;height:100%"></canvas>
+    </div>
+
+    <!-- ====== TABELAS + TOTAIS + QUITAÇÃO ====== -->
+<div style="margin-top:12px" class="table-wrap print-area" id="tableWrap">
+
+  <!-- ====== COMPARATIVO ====== -->
+  <div class="comparison" id="comparisonWrap">
+
+    <!-- Tabela A -->
+    <div>
+      <h4 id="titleA">Sistema A</h4>
+      <div class="table-scroll">
+        <table id="tableA">
+          <thead>
+            <tr>
+              <th>Mês</th>
+              <th>Saldo Inicial</th>
+              <th>Juros</th>
+              <th>Amortização</th>
+              <th>Prestação</th>
+              <th>Desconto</th>
+              <th>Saldo Final</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tabela B -->
+    <div>
+      <h4 id="titleB">Sistema B</h4>
+      <div class="table-scroll">
+        <table id="tableB">
+          <thead>
+            <tr>
+              <th>Mês</th>
+              <th>Saldo Inicial</th>
+              <th>Juros</th>
+              <th>Amortização</th>
+              <th>Prestação</th>
+              <th>Desconto</th>
+              <th>Saldo Final</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ====== TOTAIS ====== -->
+  <div class="totals-comparison" style="margin-top:20px">
+    <!-- Totais do Sistema A -->
+    <div class="totals-card gold">
+      <h4>Totais — Sistema A</h4>
+      <div class="totals-grid">
+        <div><span>Prestação média (A)</span><strong id="avgInstallmentA">R$ 0,00</strong></div>
+        <div><span>Juros totais (A)</span><strong id="totalInterestA">R$ 0,00</strong></div>
+        <div><span>Saldo financiado (A)</span><strong id="financedA">R$ 0,00</strong></div>
+      </div>
+    </div>
+
+    <!-- Totais do Sistema B -->
+    <div class="totals-card blue">
+      <h4>Totais — Sistema B</h4>
+      <div class="totals-grid">
+        <div><span>Prestação média (B)</span><strong id="avgInstallmentB">R$ 0,00</strong></div>
+        <div><span>Juros totais (B)</span><strong id="totalInterestB">R$ 0,00</strong></div>
+        <div><span>Saldo financiado (B)</span><strong id="financedB">R$ 0,00</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== RODAPÉ DE QUITAÇÃO ====== -->
+  <div style="margin-top:20px">
+    <h4>Quitação antecipada / Simulação</h4>
+    <div id="settleResult" class="small">Nenhuma quitação simulada.</div>
   </div>
 
 </div>
-
-<!-- ========= SCRIPTS (lógica) ========= -->
 <script>
-/* ========= estado e utilitários ========= */
+/* Utilities & state */
 document.getElementById('nowDate').innerText = new Date().toLocaleString('pt-BR',{year:'numeric',month:'short',day:'numeric'});
-let indexSeries = {};
+let indexSeries = {}; // month -> factor
 let compareChart = null;
 let lastA = null, lastB = null, lastMeta = null, lastSettle = null;
 
 function fmt(v){ return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:2}); }
 function roundBank(v){ return Math.round((Number(v)||0)*100)/100; }
+function toMonthlyRate(value, period, auto){ const v = Number(value)/100; if(period==='a.m') return v; if(auto) return Math.pow(1+v,1/12)-1; return v/12; }
 
-/* Conversão taxa anual -> mensal (geométrica vs linear) */
-function toMonthlyRate(value, period, autoConvert=true){
-  const nominal = Number(value)/100;
-  if(period === 'a.m') return nominal;
-  if(autoConvert){
-    return Math.pow(1 + nominal, 1/12) - 1;
-  } else {
-    return nominal / 12;
-  }
-}
-
-/* parse csv indices */
+/* Parse CSV indices */
 function parseIndexCSV(file, cb){
   const reader = new FileReader();
   reader.onload = e => {
@@ -262,88 +504,78 @@ function parseIndexCSV(file, cb){
   reader.readAsText(file);
 }
 
-/* day fraction for PV: supports 30/360 and actual/360 (approx by months -> days=30*n or if actual we still approximate by 30*n,
-   this can be improved if you want daily-precise using actual dates) */
-function dayFractionMonths(startMonth, endMonth, dayCount){
-  const months = endMonth - startMonth;
-  if(dayCount === 'actual/360') return (months * 30) / 360;
-  if(dayCount === '30/360') return (months * 30) / 360;
-  return months / 12;
-}
-
-/* ========= generateBankScheduleReal (completo e estável) ========= */
-function generateBankScheduleReal(opts){
-  const amount = Number(opts.amount) || 0;
-  const down = Number(opts.down) || 0;
-  const totalMonths = Math.max(1, Math.floor(opts.months || 1));
-  const i = Number(opts.rate) || 0; // mês decimal
-  const system = opts.system || 'price';
-  const carType = opts.carType || 'none'; // 'none'|'juros'|'total'
-  const carMonths = Math.max(0, Math.floor(opts.carMonths || 0));
+/* Core: generate schedule with settlement applied (real quitação) */
+function generateBankSchedule(opts){
+  // opts: amount, down, months, rate (monthly), system, carType, carMonths, dayCount, indexMap, reajPct, discountPct, discountCount, settleMonth, settleDiscountPct
+  const amount = Number(opts.amount)||0;
+  const down = Number(opts.down)||0;
+  const totalMonths = Math.max(1,Math.floor(opts.months||1));
+  const i = Number(opts.rate)||0; // monthly decimal
+  const system = opts.system;
+  const carType = opts.carType;
+  const carMonths = Math.max(0,Math.floor(opts.carMonths||0));
   const indexMap = opts.indexMap || {};
-  const reajPct = Number(opts.reaj || 0);
-  const discountPct = Math.max(0, Number(opts.discountPct || 0));
-  const discountCount = Math.max(0, Math.floor(opts.discountCount || 0));
-  const settleMonth = Number(opts.settleMonth || 0);
-  const settleDiscountPct = Number(opts.settleDiscountPct || 0);
-  const dayCount = opts.dayCount || '30/360';
+  const reajPct = Number(opts.reaj)||0;
+  const discountPct = Math.max(0, Number(opts.discountPct)||0);
+  const discountCount = Math.max(0, Math.floor(opts.discountCount||0));
+  const settleMonth = Number(opts.settleMonth)||0;
+  const settleDiscountPct = Number(opts.settleDiscountPct)||0;
 
   let financed = Math.max(0, amount - down);
   let balance = financed;
   const schedule = [];
-  const round = v => Math.round(v * 100) / 100;
 
   function push(m, start, interest, amort, payment, discount, end, note){
     schedule.push({
       month: m,
-      balanceStart: round(start),
-      interest: round(interest),
-      amortization: round(amort),
-      payment: round(payment),
-      discount: discount ? round(discount) : 0,
-      end: round(end),
-      note: note || ''
+      balanceStart: roundBank(start),
+      interest: roundBank(interest),
+      amortization: roundBank(amort),
+      payment: roundBank(payment),
+      discount: roundBank(discount||0),
+      end: roundBank(end),
+      note: note||''
     });
   }
 
-  // ---- CARÊNCIA ----
-  if(carMonths > 0){
-    for(let m=1; m<=carMonths; m++){
-      const balStart = balance;
-      const interest = balStart * i;
-      let amort = 0;
-      let payment = 0;
-      if(carType === 'juros') payment = interest;
-      if(carType === 'total'){
-        // capitaliza juros
-        balance = balStart + interest;
-        // apply index if SACRE
-        if(system === 'sacre'){
-          const factor = indexMap[m] || (1 + reajPct/100);
-          balance = balance * factor;
-        }
+  // Carência total: capitaliza
+  if(carType==='total' && carMonths>0){
+    for(let m=1;m<=carMonths;m++){
+      const interest = balance * i;
+      balance += interest;
+      if(system==='sacre'){
+        const factor = indexMap[m] || (1+reajPct/100);
+        balance *= factor;
       }
-      push(m, balStart, interest, amort, payment, 0, balance);
+      push(m, balance - interest, interest, 0, 0, 0, balance);
     }
   }
 
-  const startMonth = carMonths + 1;
-  const amortMonths = Math.max(1, totalMonths - carMonths);
-  const M = amortMonths;
+  // Carência juros: pay interest only
+  if(carType==='juros' && carMonths>0){
+    for(let m=1;m<=carMonths;m++){
+      const interest = balance * i;
+      push(m, balance, interest, 0, interest, 0, balance);
+    }
+  }
 
-  // ---- GERA PARCELAS conforme sistema ----
-  if(system === 'compostos'){
-    for(let k=0; k<M; k++){
-      const m = startMonth + k;
+  const startMonth = (carType==='none')?1:(carMonths+1);
+  const amortMonths = totalMonths - ((carType==='none')?0:carMonths);
+  const M = Math.max(1, amortMonths);
+
+  // Juros Compostos (acumulados) - pagamento único no final
+  if(system==='compostos'){
+    for(let m=1;m<=totalMonths;m++){
       const balStart = balance;
       const interest = balStart * i;
       balance = balStart + interest;
-      const payment = (k === M-1) ? round(balance) : 0;
+      const payment = (m===totalMonths) ? roundBank(balance) : 0;
       push(m, balStart, interest, 0, payment, 0, balance);
     }
-  } else if(system === 'price'){
-    const payment = (i === 0) ? (balance / M) : balance * i / (1 - Math.pow(1 + i, -M));
-    for(let k=0; k<M; k++){
+  } else if(system==='price'){
+    const ann = i;
+    const payment = (ann===0) ? (balance / M) : balance * ann / (1 - Math.pow(1+ann, -M));
+    for(let k=0;k<M;k++){
       const m = startMonth + k;
       const balStart = balance;
       const interest = balStart * i;
@@ -351,9 +583,9 @@ function generateBankScheduleReal(opts){
       balance = balStart - amort;
       push(m, balStart, interest, amort, payment, 0, balance);
     }
-  } else if(system === 'sac'){
+  } else if(system==='sac'){
     const amortConst = balance / M;
-    for(let k=0; k<M; k++){
+    for(let k=0;k<M;k++){
       const m = startMonth + k;
       const balStart = balance;
       const interest = balStart * i;
@@ -362,24 +594,22 @@ function generateBankScheduleReal(opts){
       balance = balStart - amort;
       push(m, balStart, interest, amort, payment, 0, balance);
     }
-  } else if(system === 'sacre'){
+  } else if(system==='sacre'){
     const amortConst = balance / M;
-    for(let k=0; k<M; k++){
+    for(let k=0;k<M;k++){
       const m = startMonth + k;
       const balStart = balance;
       const interest = balStart * i;
       const amort = amortConst;
-      let payment = interest + amort;
-      // amortiza
+      const payment = interest + amort;
       balance = balStart - amort;
-      // aplica índice mensal sobre saldo remanescente (após amortização)
-      const factor = indexMap[m] || (1 + reajPct/100);
-      balance = balance * factor;
+      const factor = indexMap[m] || (1+reajPct/100);
+      balance *= factor;
       push(m, balStart, interest, amort, payment, 0, balance);
     }
-  } else if(system === 'simples'){
+  } else if(system==='simples'){
     const amortConst = financed / M;
-    for(let k=0; k<M; k++){
+    for(let k=0;k<M;k++){
       const m = startMonth + k;
       const balStart = balance;
       const interest = financed * i;
@@ -390,100 +620,117 @@ function generateBankScheduleReal(opts){
     }
   }
 
-  // ---- DESCONTOS nas últimas parcelas (aplica em parcelas de pagamento > 0) ----
-  if(discountPct > 0 && discountCount > 0){
-    const amortRows = schedule.filter(s => s.payment > 0);
-    const L = amortRows.length;
-    for(let j=0; j<discountCount; j++){
-      const idx = L - 1 - j;
-      if(idx < 0) break;
-      const row = amortRows[idx];
-      const globalIdx = schedule.findIndex(s => s.month === row.month);
-      const discountAmount = row.payment * (discountPct/100);
-      const newPayment = Math.max(0, row.payment - discountAmount);
-      const newInterest = Math.max(0, newPayment - row.amortization);
-      schedule[globalIdx].discount = roundBank(discountAmount);
-      schedule[globalIdx].payment = roundBank(newPayment);
-      schedule[globalIdx].interest = roundBank(newInterest);
-      schedule[globalIdx].end = roundBank(schedule[globalIdx].balanceStart - schedule[globalIdx].amortization);
-      // propaga saldo p/ frente
-      for(let t = globalIdx + 1; t < schedule.length; t++){
-        const prev = schedule[t-1];
-        schedule[t].balanceStart = roundBank(prev.end);
-        schedule[t].interest = roundBank(schedule[t].balanceStart * i);
-        if(schedule[t].payment > 0){
-          schedule[t].amortization = roundBank(schedule[t].payment - schedule[t].interest);
-          schedule[t].end = roundBank(schedule[t].balanceStart - schedule[t].amortization);
-        } else {
-          schedule[t].end = schedule[t].balanceStart;
-        }
+ // 🏦 Modelo bancário real: desconto aplicado sobre os juros (mantém amortização original)
+if (discountPct > 0 && discountCount > 0) {
+  // Filtra as parcelas com pagamento normal
+  const amortRows = schedule.filter(s => s.payment > 0);
+  const L = amortRows.length;
+
+  for (let j = 0; j < discountCount; j++) {
+    const idx = L - 1 - j; // últimas N parcelas
+    if (idx < 0) break;
+
+    const row = amortRows[idx];
+    const globalIdx = schedule.findIndex(s => s.month === row.month);
+
+    const originalPayment = schedule[globalIdx].payment;
+    const originalAmort = schedule[globalIdx].amortization;
+
+    // Valor do desconto sobre o pagamento total
+    const discountAmount = originalPayment * (discountPct / 100);
+
+    // Novo pagamento com desconto
+    const newPayment = Math.max(0, originalPayment - discountAmount);
+
+    // 🧮 Mantém amortização, ajusta juros (modelo bancário)
+    const newInterest = newPayment - originalAmort;
+
+    // Evita juros negativos
+    const finalInterest = Math.max(0, newInterest);
+
+    // Atualiza os campos da parcela
+    schedule[globalIdx].discount = roundBank(discountAmount);
+    schedule[globalIdx].payment = roundBank(newPayment);
+    schedule[globalIdx].interest = roundBank(finalInterest);
+    schedule[globalIdx].amortization = roundBank(originalAmort);
+    schedule[globalIdx].end = roundBank(schedule[globalIdx].balanceStart - originalAmort);
+
+    // ✅ Propaga o saldo ajustado adiante (caso haja efeito residual de arredondamento)
+    for (let t = globalIdx + 1; t < schedule.length; t++) {
+      const prev = schedule[t - 1];
+      schedule[t].balanceStart = roundBank(prev.end);
+      schedule[t].interest = roundBank(schedule[t].balanceStart * i);
+      if (schedule[t].payment > 0) {
+        schedule[t].amortization = roundBank(schedule[t].payment - schedule[t].interest);
+        schedule[t].end = roundBank(schedule[t].balanceStart - schedule[t].amortization);
+      } else {
+        schedule[t].end = schedule[t].balanceStart;
       }
     }
   }
+}
 
-  // ---- QUITAÇÃO ANTECIPADA (PV usando fração de dias por meses) ----
-  let settlement = null;
+  // QUITAÇÃO REAL: if settleMonth provided, compute PV of remaining flows and insert a settlement row
   if(settleMonth && settleMonth > 0){
+    // PV of remaining payments after settleMonth
     let pv = 0;
     for(const r of schedule){
       if(r.month > settleMonth && r.payment > 0){
-        const tYears = dayFractionMonths(settleMonth, r.month, dayCount); // fração de ano
-        // convert tYears to equivalent months fraction for monthly rate: (1 + i)^(tYears*12)
-        const discountFactor = Math.pow(1 + i, tYears * 12);
-        pv += r.payment / discountFactor;
+        const t = r.month - settleMonth;
+        pv += r.payment / Math.pow(1 + i, t);
       }
     }
-    pv = roundBank(pv);
-    const settlementValue = roundBank(pv * (1 - settleDiscountPct/100));
-    // determine balance before settlement (if there is an entry exactly at settleMonth use its end)
-    const lastRow = schedule.find(s => s.month === settleMonth) || schedule[schedule.length - 1] || { end: financed };
+    const settlementRaw = pv * (1 - (settleDiscountPct || 0)/100);
+    const settlement = roundBank(settlementRaw);
+
+    // Keep schedule up to settleMonth (including it if exists); if settleMonth is during carencia months, we'll keep until that month.
+    const upto = schedule.filter(s => s.month <= settleMonth);
+    // Determine current balance start for settlement: if there is an entry for settleMonth use its end, else use last end available
+    const lastRow = upto.length ? upto[upto.length-1] : null;
+    const balanceBeforeSettlement = lastRow ? lastRow.end : (schedule.length ? schedule[schedule.length-1].end : roundBank(financed));
+
+    // Insert settlement row as last real row with a small note; month uses .1 to sort after integer months if needed
+    const settleRowMonth = settleMonth + 0.1;
     const settleRow = {
-      month: settleMonth + 0.1,
-      balanceStart: roundBank(lastRow.end),
+      month: settleRowMonth,
+      balanceStart: roundBank(balanceBeforeSettlement),
       interest: 0,
-      amortization: settlementValue,
-      payment: settlementValue,
-      discount: settleDiscountPct,
+      amortization: roundBank(settlement), // entire amount reduces balance to 0
+      payment: roundBank(settlement),
+      discount: roundBank((settleDiscountPct||0)),
       end: 0,
       note: 'Quitação antecipada (PV descontado)'
     };
-    // append settle row (keeps original schedule visible)
-    schedule.push(settleRow);
-    settlement = { pv, settlement: settlementValue };
+
+    // Build final schedule: upto + settlement row
+    const finalSchedule = upto.slice();
+    finalSchedule.push(settleRow);
+    return { financed, schedule: finalSchedule, settlement: { pv: roundBank(pv), settlement } };
   }
 
-  return { financed, schedule, settlement };
+  return { financed, schedule };
 }
 
-/* ========= render & helpers ========= */
-function fillTable(selector, schedule){
-  const tbody = document.querySelector(selector + ' tbody');
-  tbody.innerHTML = '';
-  schedule.forEach(r=>{
-    const tr = document.createElement('tr');
-    const monthLabel = Number.isInteger(r.month) ? `M${r.month}` : `M${Math.floor(r.month)} (Quitação)`;
-    const note = r.note ? ` — ${r.note}` : '';
-    tr.innerHTML = `<td>${monthLabel}${note}</td>
-      <td>${fmt(r.balanceStart)}</td>
-      <td>${fmt(r.interest)}</td>
-      <td>${fmt(r.amortization)}</td>
-      <td>${fmt(r.payment)}</td>
-      <td>${r.discount ? (typeof r.discount === 'number' && r.discount>0 ? fmt(r.discount) : '-') : '-'}</td>
-      <td>${fmt(r.end)}</td>`;
-    tbody.appendChild(tr);
-  });
+/* Settlement PV helper (standalone) */
+function computeSettlement(schedule, currentMonth, monthlyRate, negotiationPct){
+  const remaining = schedule.filter(r => r.month > currentMonth && r.payment > 0);
+  let pv = 0;
+  for(const r of remaining){
+    const t = r.month - currentMonth;
+    pv += r.payment / Math.pow(1 + monthlyRate, t);
+  }
+  const settlement = pv * (1 - negotiationPct/100);
+  return { pv: roundBank(pv), settlement: roundBank(settlement), remainingCount: remaining.length };
 }
 
+/* Render & table */
 function renderComparison(scheduleA, scheduleB, labelA, labelB){
-  const maxM = Math.max(
-    scheduleA.length ? Math.ceil(scheduleA[scheduleA.length-1].month) : 0,
-    scheduleB.length ? Math.ceil(scheduleB[scheduleB.length-1].month) : 0
-  );
+  const maxM = Math.max(scheduleA.length ? Math.ceil(scheduleA[scheduleA.length-1].month) : 0, scheduleB.length ? Math.ceil(scheduleB[scheduleB.length-1].month) : 0);
   const labels = [];
   for(let i=1;i<=maxM;i++) labels.push('M'+i);
 
-  const balA = labels.map((l,i)=>{ const m=i+1; const row = scheduleA.find(r=>Math.floor(r.month)===m); return row ? row.end : 0; });
-  const balB = labels.map((l,i)=>{ const m=i+1; const row = scheduleB.find(r=>Math.floor(r.month)===m); return row ? row.end : 0; });
+  const balA = labels.map((l,i)=>{ const m=i+1; const row = scheduleA.find(r=>Math.floor(r.month)===m); return row ? row.end : (scheduleA.length ? scheduleA[scheduleA.length-1].end : 0); });
+  const balB = labels.map((l,i)=>{ const m=i+1; const row = scheduleB.find(r=>Math.floor(r.month)===m); return row ? row.end : (scheduleB.length ? scheduleB[scheduleB.length-1].end : 0); });
 
   const ctx = document.getElementById('compareChart').getContext('2d');
   if(compareChart){
@@ -512,7 +759,25 @@ function renderComparison(scheduleA, scheduleB, labelA, labelB){
   });
 }
 
-/* ========= export (XLSX / PDF) ========= */
+function fillTable(selector, schedule){
+  const tbody = document.querySelector(selector + ' tbody');
+  tbody.innerHTML = '';
+  schedule.forEach(r=>{
+    const tr = document.createElement('tr');
+    const monthLabel = (Number.isInteger(r.month)) ? `M${r.month}` : `M${Math.floor(r.month)} (Quitação)`;
+    const note = r.note ? ` — ${r.note}` : '';
+    tr.innerHTML = `<td>${monthLabel}${note}</td>
+      <td>${fmt(r.balanceStart)}</td>
+      <td>${fmt(r.interest)}</td>
+      <td>${fmt(r.amortization)}</td>
+      <td>${fmt(r.payment)}</td>
+      <td>${r.discount? (typeof r.discount==='number' && r.discount>0 ? (r.note? r.discount : fmt(r.discount)) : '-') : '-'}</td>
+      <td>${fmt(r.end)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* Export functions */
 function exportXlsx(objA, objB, meta){
   const wb = XLSX.utils.book_new();
   const sheetA = objA.schedule.map(r=>({
@@ -561,7 +826,7 @@ async function exportPdf(element, meta, settleInfo){
   pdf.save('simulacao_bancaria_quitacao.pdf');
 }
 
-/* ========= eventos UI ========= */
+/* Events */
 document.getElementById('indexFile').addEventListener('change', (e)=>{
   const f = e.target.files[0];
   if(!f) return;
@@ -573,37 +838,43 @@ document.getElementById('themeSelect').addEventListener('change', (e)=>{
   else document.documentElement.classList.remove('light');
 });
 
-document.getElementById('btnReset').addEventListener('click', ()=>{ if(confirm('Restaurar valores iniciais?')) location.reload(); });
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  if(!confirm('Restaurar valores iniciais?')) return;
+  location.reload();
+});
 
 document.getElementById('btnCalc').addEventListener('click', ()=>{
-  const amount = Number(document.getElementById('loanAmount').value) || 0;
-  const down = Number(document.getElementById('downPayment').value) || 0;
-  const months = Number(document.getElementById('termMonths').value) || 1;
-  const rateVal = Number(document.getElementById('rateValue').value) || 0;
+  const amount = Number(document.getElementById('loanAmount').value)||0;
+  const down = Number(document.getElementById('downPayment').value)||0;
+  const months = Number(document.getElementById('termMonths').value)||1;
+  const rateVal = Number(document.getElementById('rateValue').value)||0;
   const ratePeriod = document.getElementById('ratePeriod').value;
   const auto = document.getElementById('autoConvert').value === '1';
   const sysA = document.getElementById('systemA').value;
   const sysB = document.getElementById('systemB').value;
+  const indexType = document.getElementById('indexSelect').value;
   const carType = document.getElementById('carenciaType').value;
-  const carMonths = Number(document.getElementById('carenciaMonths').value) || 0;
+  const carMonths = Number(document.getElementById('carenciaMonths').value)||0;
   const dayCount = document.getElementById('dayCount').value;
-  const discountPct = Number(document.getElementById('discountPercent').value) || 0;
-  const discountCount = Number(document.getElementById('discountCount').value) || 0;
-  const settleMonth = Number(document.getElementById('settleMonth').value) || 0;
-  const settleDiscountPct = Number(document.getElementById('settleDiscountPct').value) || 0;
+  const discountPct = Number(document.getElementById('discountPercent').value)||0;
+  const discountCount = Number(document.getElementById('discountCount').value)||0;
+  const settleMonth = Number(document.getElementById('settleMonth').value)||0;
+  const settleDiscountPct = Number(document.getElementById('settleDiscountPct').value)||0;
 
   const monthlyRate = toMonthlyRate(rateVal, ratePeriod, auto);
-
   const idxMap = indexSeries || {};
 
-  const resA = generateBankScheduleReal({
+  // Pass settlement parameters into generator so it will produce a final schedule truncated at the settlement month
+  const resA = generateBankSchedule({
     amount, down, months, rate: monthlyRate, system: sysA, carType, carMonths, dayCount,
-    indexMap: idxMap, reaj:0, discountPct, discountCount, settleMonth, settleDiscountPct
+    indexMap: idxMap, reaj: 0, discountPct, discountCount,
+    settleMonth, settleDiscountPct
   });
 
-  const resB = generateBankScheduleReal({
+  const resB = generateBankSchedule({
     amount, down, months, rate: monthlyRate, system: sysB, carType, carMonths, dayCount,
-    indexMap: idxMap, reaj:0, discountPct, discountCount, settleMonth, settleDiscountPct
+    indexMap: idxMap, reaj: 0, discountPct, discountCount,
+    settleMonth, settleDiscountPct
   });
 
   fillTable('#tableA', resA.schedule);
@@ -613,25 +884,27 @@ document.getElementById('btnCalc').addEventListener('click', ()=>{
 
   renderComparison(resA.schedule, resB.schedule, 'A-'+sysA.toUpperCase(), 'B-'+sysB.toUpperCase());
 
-  // KPIs A
-  const totInterestA = resA.schedule.reduce((s,x)=>s+Number(x.interest),0);
-  const avgPayA = resA.schedule.length ? (resA.schedule.reduce((s,x)=>s+Number(x.payment),0)/resA.schedule.length) : 0;
-  document.getElementById('avgInstallmentA').innerText = fmt(avgPayA);
-  document.getElementById('totalInterestA').innerText = fmt(totInterestA);
-  document.getElementById('financedA').innerText = fmt(resA.financed);
+  // KPIs A (totais acima)
+const totInterestA = resA.schedule.reduce((s,x)=>s+Number(x.interest),0);
+const avgPayA = resA.schedule.length ? (resA.schedule.reduce((s,x)=>s+Number(x.payment),0)/resA.schedule.length) : 0;
+document.getElementById('avgInstallmentA').innerText = fmt(avgPayA);
+document.getElementById('totalInterestA').innerText = fmt(totInterestA);
+document.getElementById('financedA').innerText = fmt(resA.financed);
 
-  // KPIs B
-  const totInterestB = resB.schedule.reduce((s,x)=>s+Number(x.interest),0);
-  const avgPayB = resB.schedule.length ? (resB.schedule.reduce((s,x)=>s+Number(x.payment),0)/resB.schedule.length) : 0;
-  document.getElementById('avgInstallmentB').innerText = fmt(avgPayB);
-  document.getElementById('totalInterestB').innerText = fmt(totInterestB);
-  document.getElementById('financedB').innerText = fmt(resB.financed);
+// KPIs B (totais acima)
+const totInterestB = resB.schedule.reduce((s,x)=>s+Number(x.interest),0);
+const avgPayB = resB.schedule.length ? (resB.schedule.reduce((s,x)=>s+Number(x.payment),0)/resB.schedule.length) : 0;
+document.getElementById('avgInstallmentB').innerText = fmt(avgPayB);
+document.getElementById('totalInterestB').innerText = fmt(totInterestB);
+document.getElementById('financedB').innerText = fmt(resB.financed);
 
+  // store
   lastA = resA; lastB = resB; lastMeta = { date: new Date().toLocaleString('pt-BR',{year:'numeric',month:'short',day:'numeric'}), amount, downpayment: down, months, rateMonthly: monthlyRate, titleA: sysA, titleB: sysB };
 
+  // If generator returned settlement info (when settleMonth provided), show it
   if(resA.settlement){
     lastSettle = resA.settlement;
-    document.getElementById('settleResult').innerText = `Quitação no mês ${settleMonth}: PV dos fluxos = ${fmt(resA.settlement.pv)}; Valor com negociação: ${fmt(resA.settlement.settlement)}`;
+    document.getElementById('settleResult').innerText = `Quitação no mês ${settleMonth}: PV dos fluxos = ${fmt(resA.settlement.pv)}; Valor com negociação: ${fmt(resA.settlement.settlement)} (parcelas remanescentes calculadas)`;
   } else {
     lastSettle = null;
     document.getElementById('settleResult').innerText = 'Nenhuma quitação simulada.';
@@ -642,15 +915,18 @@ document.getElementById('btnExportXlsx').addEventListener('click', ()=>{
   if(!lastA) return alert('Gere uma simulação primeiro.');
   exportXlsx(lastA, lastB || {schedule:[]}, lastMeta);
 });
+
 document.getElementById('btnExportPdf').addEventListener('click', async ()=>{
   if(!lastA) return alert('Gere uma simulação primeiro.');
   const elem = document.getElementById('tableWrap');
   await exportPdf(elem, lastMeta, lastSettle);
 });
+
 document.getElementById('btnTogglePrint').addEventListener('click', ()=> window.print());
 
+/* Auto-run on load */
 window.addEventListener('load', ()=>{
-  document.documentElement.classList.remove('light');
+  document.documentElement.classList.remove('light'); // default: dark
   document.getElementById('themeSelect').value = 'dark';
   setTimeout(()=>document.getElementById('btnCalc').click(), 120);
 });
