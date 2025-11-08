@@ -339,25 +339,60 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
       </div>
 
       <div style="margin-top:12px" class="table-wrap print-area" id="tableWrap">
-        <div class="comparison" id="comparisonWrap">
-          <div>
-            <h4 id="titleA">Sistema A</h4>
-            <table id="tableA"><thead><tr><th>Mês</th><th>Saldo Inicial</th><th>Juros</th><th>Amortização</th><th>Prestação</th><th>Desconto</th><th>Saldo Final</th></tr></thead><tbody></tbody></table>
-          </div>
-          <div>
-            <h4 id="titleB">Sistema B</h4>
-            <table id="tableB"><thead><tr><th>Mês</th><th>Saldo Inicial</th><th>Juros</th><th>Amortização</th><th>Prestação</th><th>Desconto</th><th>Saldo Final</th></tr></thead><tbody></tbody></table>
-          </div>
-        </div>
+        <!-- ============================ -->
+<!-- COMPARAÇÃO DE SISTEMAS (TABELAS) -->
+<!-- ============================ -->
+<div class="comparison" id="comparisonWrap">
 
-        <div style="margin-top:12px">
-          <h4>Quitação antecipada / Simulação</h4>
-          <div id="settleResult" class="small">Nenhuma quitação simulada.</div>
-        </div>
-      </div>
-
+  <!-- ====== TABELA A ====== -->
+  <div>
+    <h4 id="titleA">Sistema A</h4>
+    <div class="table-scroll">
+      <table id="tableA">
+        <thead>
+          <tr>
+            <th>Mês</th>
+            <th>Saldo Inicial</th>
+            <th>Juros</th>
+            <th>Amortização</th>
+            <th>Prestação</th>
+            <th>Desconto</th>
+            <th>Saldo Final</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- As linhas serão preenchidas via JavaScript -->
+          <!-- Exemplo:
+          <tr><td>1</td><td>100.000</td><td>800</td><td>2.000</td><td>2.800</td><td>0</td><td>98.000</td></tr>
+          -->
+        </tbody>
+      </table>
     </div>
   </div>
+
+  <!-- ====== TABELA B ====== -->
+  <div>
+    <h4 id="titleB">Sistema B</h4>
+    <div class="table-scroll">
+      <table id="tableB">
+        <thead>
+          <tr>
+            <th>Mês</th>
+            <th>Saldo Inicial</th>
+            <th>Juros</th>
+            <th>Amortização</th>
+            <th>Prestação</th>
+            <th>Desconto</th>
+            <th>Saldo Final</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- As linhas serão preenchidas via JavaScript -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 
 <script>
