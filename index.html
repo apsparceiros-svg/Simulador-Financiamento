@@ -26,9 +26,9 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-fon
   margin:20px auto;
   padding:20px;
   display:grid;
-  grid-template-columns:1fr 2fr; /* layout flexível: controles + comparação */
+  grid-template-columns:1fr 2fr;
   gap:20px;
-  justify-content:center; /* centraliza o grid */
+  justify-content:center;
 }
 
 /* Cards, controles e KPIs */
@@ -48,10 +48,50 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-fon
 .kpis{display:flex;gap:15px;flex-wrap:wrap;margin-top:12px;}
 .kpi{background:var(--panel);padding:15px;border-radius:10px;min-width:160px;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,0.15);}
 .kpi .small{margin-bottom:8px;}
-.table-wrap{max-height:520px;overflow:auto;border-radius:10px;border:1px solid var(--glass);padding:10px;background:var(--panel);}
-table{width:100%;border-collapse:collapse;font-size:13px;}
-thead th{position:sticky;top:0;background:var(--panel);padding:8px;text-align:right;}
-tbody td{padding:8px;text-align:right;border-bottom:1px dashed rgba(255,255,255,0.05);}
+
+/* ===================== */
+/* CORREÇÃO DO SCROLL    */
+/* ===================== */
+
+/* Contêiner externo da tabela */
+.table-wrap {
+  border-radius: 10px;
+  border: 1px solid var(--glass);
+  background: var(--panel);
+  padding: 0;
+}
+
+/* Contêiner de rolagem (agora o sticky funciona!) */
+.table-scroll {
+  max-height: 520px;
+  overflow-y: auto;
+  display: block;
+  border-radius: 0 0 10px 10px;
+}
+
+/* Tabelas */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+/* Cabeçalhos fixos */
+thead th {
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  padding: 8px;
+  text-align: right;
+  z-index: 2;
+}
+
+tbody td {
+  padding: 8px;
+  text-align: right;
+  border-bottom: 1px dashed rgba(255,255,255,0.05);
+}
+
 td:first-child,th:first-child{text-align:left;}
 tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 .chart-area{height:400px;margin-top:12px;}
@@ -61,7 +101,7 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:20px;
-  overflow-x:auto; /* só rola se necessário */
+  overflow-x:auto;
 }
 
 /* Theme toggle */
@@ -70,14 +110,14 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 /* Footer */
 .footer{margin-top:12px;color:var(--muted);font-size:13px;}
 
-/* --- MEDIA QUERIES RESPONSIVAS --- */
+/* --- MEDIA QUERIES --- */
 @media(max-width:1100px){
   .container{
-    grid-template-columns:1fr; /* uma coluna em telas pequenas */
+    grid-template-columns:1fr;
     padding:10px;
   }
   .comparison{
-    grid-template-columns:1fr; /* tabelas uma abaixo da outra */
+    grid-template-columns:1fr;
   }
 }
 
@@ -85,9 +125,9 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 /* MELHORIAS PREMIUM TABELAS */
 /* ======================== */
 
-/* --- TÍTULOS DAS TABELAS PREMIUM --- */
+/* --- TÍTULOS DAS TABELAS --- */
 #titleA {
-  background-color: #c9a84b; /* dourado */
+  background-color: #c9a84b;
   color: #0b0b0b;
   padding: 10px 15px;
   border-radius: 12px 12px 0 0;
@@ -99,7 +139,7 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 }
 
 #titleB {
-  background-color: #2b6cb0; /* azul */
+  background-color: #2b6cb0;
   color: #ffffff;
   padding: 10px 15px;
   border-radius: 12px 12px 0 0;
@@ -110,7 +150,7 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
   margin-bottom: 0;
 }
 
-/* --- BORDAS, FUNDO E SOMBRA DAS TABELAS --- */
+/* --- BORDAS E FUNDO DAS TABELAS --- */
 #tableA {
   border: 2px solid #c9a84b;
   border-radius: 0 0 12px 12px;
@@ -127,15 +167,13 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
   transition: all 0.2s;
 }
 
-/* --- CABEÇALHOS DAS TABELAS --- */
+/* --- CABEÇALHOS --- */
 #tableA thead th {
   background-color: #f5f0d6;
   color: #0b0b0b;
   font-weight: 700;
   text-transform: uppercase;
-  position: sticky;
-  top: 0;
-  z-index: 1;
+  z-index: 3;
 }
 
 #tableB thead th {
@@ -143,12 +181,10 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
   color: #0b1220;
   font-weight: 700;
   text-transform: uppercase;
-  position: sticky;
-  top: 0;
-  z-index: 1;
+  z-index: 3;
 }
 
-/* --- LINHAS ALTERNADAS E HOVER --- */
+/* --- LINHAS --- */
 #tableA tbody tr:nth-child(odd) {
   background-color: rgba(201, 168, 75, 0.08);
 }
@@ -163,20 +199,19 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
   transition: all 0.15s;
 }
 
-/* --- CELULAS DAS TABELAS --- */
+/* --- CÉLULAS --- */
 #tableA tbody td, #tableB tbody td {
   padding: 10px 8px;
   text-align: right;
   transition: all 0.15s;
 }
 
-/* Primeiro td (mês) alinha à esquerda */
 #tableA tbody td:first-child, #tableB tbody td:first-child {
   text-align: left;
   font-weight: 600;
 }
 
-/* --- RODAPÉ SUAVE --- */
+/* --- RODAPÉ --- */
 #tableA tbody tr:last-child td, #tableB tbody tr:last-child td {
   border-bottom: none;
 }
