@@ -506,11 +506,10 @@ function parseIndexCSV(file, cb){
 
 /* Core: generate schedule with settlement applied (real quitação) */
 function generateBankSchedule(opts){
-  // opts: amount, down, months, rate (monthly), system, carType, carMonths, dayCount, indexMap, reajPct, discountPct, discountCount, settleMonth, settleDiscountPct
   const amount = Number(opts.amount)||0;
   const down = Number(opts.down)||0;
   const totalMonths = Math.max(1,Math.floor(opts.months||1));
-  const i = Number(opts.rate)||0; // monthly decimal
+  const i = Number(opts.rate)||0; // taxa mensal decimal
   const system = opts.system;
   const carType = opts.carType;
   const carMonths = Math.max(0,Math.floor(opts.carMonths||0));
@@ -525,6 +524,8 @@ function generateBankSchedule(opts){
   let balance = financed;
   const schedule = [];
 
+  function roundBank(v){ return Math.round((Number(v)||0)*100)/100; }
+
   function push(m, start, interest, amort, payment, discount, end, note){
     schedule.push({
       month: m,
@@ -538,7 +539,7 @@ function generateBankSchedule(opts){
     });
   }
 
-  // Carência total: capitaliza
+  // 1️⃣ Carência
   if(carType==='total' && carMonths>0){
     for(let m=1;m<=carMonths;m++){
       const interest = balance * i;
@@ -549,10 +550,7 @@ function generateBankSchedule(opts){
       }
       push(m, balance - interest, interest, 0, 0, 0, balance);
     }
-  }
-
-  // Carência juros: pay interest only
-  if(carType==='juros' && carMonths>0){
+  } else if(carType==='juros' && carMonths>0){
     for(let m=1;m<=carMonths;m++){
       const interest = balance * i;
       push(m, balance, interest, 0, interest, 0, balance);
@@ -563,24 +561,24 @@ function generateBankSchedule(opts){
   const amortMonths = totalMonths - ((carType==='none')?0:carMonths);
   const M = Math.max(1, amortMonths);
 
-  // Juros Compostos (acumulados) - pagamento único no final
+  // 2️⃣ Sistema de amortização
   if(system==='compostos'){
     for(let m=1;m<=totalMonths;m++){
       const balStart = balance;
       const interest = balStart * i;
-      balance = balStart + interest;
-      const payment = (m===totalMonths) ? roundBank(balance) : 0;
+      balance += interest;
+      const payment = (m===totalMonths)? roundBank(balance) : 0;
       push(m, balStart, interest, 0, payment, 0, balance);
     }
   } else if(system==='price'){
     const ann = i;
-    const payment = (ann===0) ? (balance / M) : balance * ann / (1 - Math.pow(1+ann, -M));
+    const payment = (ann===0)? (balance/M) : balance * ann / (1 - Math.pow(1+ann, -M));
     for(let k=0;k<M;k++){
       const m = startMonth + k;
       const balStart = balance;
       const interest = balStart * i;
       const amort = payment - interest;
-      balance = balStart - amort;
+      balance -= amort;
       push(m, balStart, interest, amort, payment, 0, balance);
     }
   } else if(system==='sac'){
@@ -591,7 +589,7 @@ function generateBankSchedule(opts){
       const interest = balStart * i;
       const amort = amortConst;
       const payment = interest + amort;
-      balance = balStart - amort;
+      balance -= amort;
       push(m, balStart, interest, amort, payment, 0, balance);
     }
   } else if(system==='sacre'){
@@ -602,9 +600,9 @@ function generateBankSchedule(opts){
       const interest = balStart * i;
       const amort = amortConst;
       const payment = interest + amort;
-      balance = balStart - amort;
+      balance -= amort;
       const factor = indexMap[m] || (1+reajPct/100);
-      balance *= factor;
+      balance *= factor; // aplica correção após amortização
       push(m, balStart, interest, amort, payment, 0, balance);
     }
   } else if(system==='simples'){
@@ -615,94 +613,69 @@ function generateBankSchedule(opts){
       const interest = financed * i;
       const amort = amortConst;
       const payment = interest + amort;
-      balance = balStart - amort;
+      balance -= amort;
       push(m, balStart, interest, amort, payment, 0, balance);
     }
   }
 
- // 🏦 Modelo bancário real: desconto aplicado sobre os juros (mantém amortização original)
-if (discountPct > 0 && discountCount > 0) {
-  // Filtra as parcelas com pagamento normal
-  const amortRows = schedule.filter(s => s.payment > 0);
-  const L = amortRows.length;
-
-  for (let j = 0; j < discountCount; j++) {
-    const idx = L - 1 - j; // últimas N parcelas
-    if (idx < 0) break;
-
-    const row = amortRows[idx];
-    const globalIdx = schedule.findIndex(s => s.month === row.month);
-
-    const originalPayment = schedule[globalIdx].payment;
-    const originalAmort = schedule[globalIdx].amortization;
-
-    // Valor do desconto sobre o pagamento total
-    const discountAmount = originalPayment * (discountPct / 100);
-
-    // Novo pagamento com desconto
-    const newPayment = Math.max(0, originalPayment - discountAmount);
-
-    // 🧮 Mantém amortização, ajusta juros (modelo bancário)
-    const newInterest = newPayment - originalAmort;
-
-    // Evita juros negativos
-    const finalInterest = Math.max(0, newInterest);
-
-    // Atualiza os campos da parcela
-    schedule[globalIdx].discount = roundBank(discountAmount);
-    schedule[globalIdx].payment = roundBank(newPayment);
-    schedule[globalIdx].interest = roundBank(finalInterest);
-    schedule[globalIdx].amortization = roundBank(originalAmort);
-    schedule[globalIdx].end = roundBank(schedule[globalIdx].balanceStart - originalAmort);
-
-    // ✅ Propaga o saldo ajustado adiante (caso haja efeito residual de arredondamento)
-    for (let t = globalIdx + 1; t < schedule.length; t++) {
-      const prev = schedule[t - 1];
-      schedule[t].balanceStart = roundBank(prev.end);
-      schedule[t].interest = roundBank(schedule[t].balanceStart * i);
-      if (schedule[t].payment > 0) {
-        schedule[t].amortization = roundBank(schedule[t].payment - schedule[t].interest);
-        schedule[t].end = roundBank(schedule[t].balanceStart - schedule[t].amortization);
-      } else {
-        schedule[t].end = schedule[t].balanceStart;
+  // 3️⃣ Desconto em parcelas finais
+  if(discountPct > 0 && discountCount > 0){
+    const amortRows = schedule.filter(s => s.payment > 0);
+    const L = amortRows.length;
+    for(let j=0;j<discountCount;j++){
+      const idx = L-1-j;
+      if(idx<0) break;
+      const row = amortRows[idx];
+      const globalIdx = schedule.findIndex(s => s.month === row.month);
+      const originalPayment = schedule[globalIdx].payment;
+      const originalAmort = schedule[globalIdx].amortization;
+      const discountAmount = originalPayment * (discountPct/100);
+      const newPayment = Math.max(0, originalPayment - discountAmount);
+      const newInterest = Math.max(0, newPayment - originalAmort);
+      schedule[globalIdx].discount = roundBank(discountAmount);
+      schedule[globalIdx].payment = roundBank(newPayment);
+      schedule[globalIdx].interest = roundBank(newInterest);
+      schedule[globalIdx].amortization = roundBank(originalAmort);
+      schedule[globalIdx].end = roundBank(schedule[globalIdx].balanceStart - originalAmort);
+      for(let t=globalIdx+1;t<schedule.length;t++){
+        const prev = schedule[t-1];
+        schedule[t].balanceStart = roundBank(prev.end);
+        schedule[t].interest = roundBank(schedule[t].balanceStart * i);
+        if(schedule[t].payment>0){
+          schedule[t].amortization = roundBank(schedule[t].payment - schedule[t].interest);
+          schedule[t].end = roundBank(schedule[t].balanceStart - schedule[t].amortization);
+        } else {
+          schedule[t].end = schedule[t].balanceStart;
+        }
       }
     }
   }
-}
 
-  // QUITAÇÃO REAL: if settleMonth provided, compute PV of remaining flows and insert a settlement row
-  if(settleMonth && settleMonth > 0){
-    // PV of remaining payments after settleMonth
+  // 4️⃣ Quitação antecipada
+  if(settleMonth && settleMonth>0){
     let pv = 0;
     for(const r of schedule){
-      if(r.month > settleMonth && r.payment > 0){
+      if(r.month > settleMonth && r.payment>0){
         const t = r.month - settleMonth;
-        pv += r.payment / Math.pow(1 + i, t);
+        pv += r.payment / Math.pow(1+i, t); // PV conforme taxa mensal
       }
     }
-    const settlementRaw = pv * (1 - (settleDiscountPct || 0)/100);
+    const settlementRaw = pv * (1 - (settleDiscountPct||0)/100);
     const settlement = roundBank(settlementRaw);
-
-    // Keep schedule up to settleMonth (including it if exists); if settleMonth is during carencia months, we'll keep until that month.
     const upto = schedule.filter(s => s.month <= settleMonth);
-    // Determine current balance start for settlement: if there is an entry for settleMonth use its end, else use last end available
     const lastRow = upto.length ? upto[upto.length-1] : null;
     const balanceBeforeSettlement = lastRow ? lastRow.end : (schedule.length ? schedule[schedule.length-1].end : roundBank(financed));
-
-    // Insert settlement row as last real row with a small note; month uses .1 to sort after integer months if needed
     const settleRowMonth = settleMonth + 0.1;
     const settleRow = {
       month: settleRowMonth,
       balanceStart: roundBank(balanceBeforeSettlement),
       interest: 0,
-      amortization: roundBank(settlement), // entire amount reduces balance to 0
-      payment: roundBank(settlement),
-      discount: roundBank((settleDiscountPct||0)),
+      amortization: settlement,
+      payment: settlement,
+      discount: roundBank(settleDiscountPct),
       end: 0,
       note: 'Quitação antecipada (PV descontado)'
     };
-
-    // Build final schedule: upto + settlement row
     const finalSchedule = upto.slice();
     finalSchedule.push(settleRow);
     return { financed, schedule: finalSchedule, settlement: { pv: roundBank(pv), settlement } };
