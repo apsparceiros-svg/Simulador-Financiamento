@@ -490,16 +490,9 @@ let indexSeries = {}; // month -> factor
 let compareChart = null;
 let lastA = null, lastB = null, lastMeta = null, lastSettle = null;
 
-function fmt(v){
-  return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:2});
-}
+function fmt(v){ return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:2}); }
 function roundBank(v){ return Math.round((Number(v)||0)*100)/100; }
-function toMonthlyRate(value, period, auto){
-  const v = Number(value)/100;
-  if(period==='a.m') return v;
-  if(auto) return Math.pow(1+v,1/12)-1;
-  return v/12;
-}
+function toMonthlyRate(value, period, auto){ const v = Number(value)/100; if(period==='a.m') return v; if(auto) return Math.pow(1+v,1/12)-1; return v/12; }
 
 /* Parse CSV indices */
 function parseIndexCSV(file, cb){
@@ -520,12 +513,13 @@ function parseIndexCSV(file, cb){
   reader.readAsText(file);
 }
 
-/* Core: generate schedule */
+/* Core: generate schedule with settlement applied (real quitação) */
 function generateBankSchedule(opts){
+  // opts: amount, down, months, rate (monthly), system, carType, carMonths, dayCount, indexMap, reajPct, discountPct, discountCount, settleMonth, settleDiscountPct
   const amount = Number(opts.amount)||0;
   const down = Number(opts.down)||0;
   const totalMonths = Math.max(1,Math.floor(opts.months||1));
-  const i = Number(opts.rate)||0;
+  const i = Number(opts.rate)||0; // monthly decimal
   const system = opts.system;
   const carType = opts.carType;
   const carMonths = Math.max(0,Math.floor(opts.carMonths||0));
@@ -535,6 +529,7 @@ function generateBankSchedule(opts){
   const discountCount = Math.max(0, Math.floor(opts.discountCount||0));
   const settleMonth = Number(opts.settleMonth)||0;
   const settleDiscountPct = Number(opts.settleDiscountPct)||0;
+
   let financed = Math.max(0, amount - down);
   let balance = financed;
   const schedule = [];
@@ -565,7 +560,7 @@ function generateBankSchedule(opts){
     }
   }
 
-  // Carência juros
+  // Carência juros: pay interest only
   if(carType==='juros' && carMonths>0){
     for(let m=1;m<=carMonths;m++){
       const interest = balance * i;
@@ -577,6 +572,7 @@ function generateBankSchedule(opts){
   const amortMonths = totalMonths - ((carType==='none')?0:carMonths);
   const M = Math.max(1, amortMonths);
 
+  // Juros Compostos (acumulados) - pagamento único no final
   if(system==='compostos'){
     for(let m=1;m<=totalMonths;m++){
       const balStart = balance;
@@ -633,7 +629,7 @@ function generateBankSchedule(opts){
     }
   }
 
-  // Discount on last N installments
+  // Discount on last N amortizable installments
   if(discountPct>0 && discountCount>0){
     const amortRows = schedule.filter(s=>s.payment>0);
     const L = amortRows.length;
@@ -650,10 +646,13 @@ function generateBankSchedule(opts){
       schedule[globalIdx].payment = roundBank(newPayment);
       schedule[globalIdx].amortization = roundBank(newAmort);
       schedule[globalIdx].end = roundBank(schedule[globalIdx].balanceStart - newAmort);
+
+      // propagate forward
       for(let t = globalIdx + 1; t < schedule.length; t++){
         schedule[t].balanceStart = roundBank(schedule[t-1].end);
         schedule[t].interest = roundBank(schedule[t].balanceStart * i);
         if(schedule[t].payment > 0){
+          // if previously discounted, preserve discount; otherwise keep payment and recompute amort
           const orig = schedule[t].payment + (schedule[t].discount || 0);
           if(schedule[t].discount){
             schedule[t].payment = roundBank(orig - schedule[t].discount);
@@ -667,16 +666,68 @@ function generateBankSchedule(opts){
     }
   }
 
+  // QUITAÇÃO REAL: if settleMonth provided, compute PV of remaining flows and insert a settlement row
+  if(settleMonth && settleMonth > 0){
+    // PV of remaining payments after settleMonth
+    let pv = 0;
+    for(const r of schedule){
+      if(r.month > settleMonth && r.payment > 0){
+        const t = r.month - settleMonth;
+        pv += r.payment / Math.pow(1 + i, t);
+      }
+    }
+    const settlementRaw = pv * (1 - (settleDiscountPct || 0)/100);
+    const settlement = roundBank(settlementRaw);
+
+    // Keep schedule up to settleMonth (including it if exists); if settleMonth is during carencia months, we'll keep until that month.
+    const upto = schedule.filter(s => s.month <= settleMonth);
+    // Determine current balance start for settlement: if there is an entry for settleMonth use its end, else use last end available
+    const lastRow = upto.length ? upto[upto.length-1] : null;
+    const balanceBeforeSettlement = lastRow ? lastRow.end : (schedule.length ? schedule[schedule.length-1].end : roundBank(financed));
+
+    // Insert settlement row as last real row with a small note; month uses .1 to sort after integer months if needed
+    const settleRowMonth = settleMonth + 0.1;
+    const settleRow = {
+      month: settleRowMonth,
+      balanceStart: roundBank(balanceBeforeSettlement),
+      interest: 0,
+      amortization: roundBank(settlement), // entire amount reduces balance to 0
+      payment: roundBank(settlement),
+      discount: roundBank((settleDiscountPct||0)),
+      end: 0,
+      note: 'Quitação antecipada (PV descontado)'
+    };
+
+    // Build final schedule: upto + settlement row
+    const finalSchedule = upto.slice();
+    finalSchedule.push(settleRow);
+    return { financed, schedule: finalSchedule, settlement: { pv: roundBank(pv), settlement } };
+  }
+
   return { financed, schedule };
 }
 
-/* Render comparison chart */
+/* Settlement PV helper (standalone) */
+function computeSettlement(schedule, currentMonth, monthlyRate, negotiationPct){
+  const remaining = schedule.filter(r => r.month > currentMonth && r.payment > 0);
+  let pv = 0;
+  for(const r of remaining){
+    const t = r.month - currentMonth;
+    pv += r.payment / Math.pow(1 + monthlyRate, t);
+  }
+  const settlement = pv * (1 - negotiationPct/100);
+  return { pv: roundBank(pv), settlement: roundBank(settlement), remainingCount: remaining.length };
+}
+
+/* Render & table */
 function renderComparison(scheduleA, scheduleB, labelA, labelB){
-  const maxM = Math.max(scheduleA.length, scheduleB.length);
+  const maxM = Math.max(scheduleA.length ? Math.ceil(scheduleA[scheduleA.length-1].month) : 0, scheduleB.length ? Math.ceil(scheduleB[scheduleB.length-1].month) : 0);
   const labels = [];
   for(let i=1;i<=maxM;i++) labels.push('M'+i);
-  const balA = labels.map((l,i)=>scheduleA[i]?scheduleA[i].end:0);
-  const balB = labels.map((l,i)=>scheduleB[i]?scheduleB[i].end:0);
+
+  const balA = labels.map((l,i)=>{ const m=i+1; const row = scheduleA.find(r=>Math.floor(r.month)===m); return row ? row.end : (scheduleA.length ? scheduleA[scheduleA.length-1].end : 0); });
+  const balB = labels.map((l,i)=>{ const m=i+1; const row = scheduleB.find(r=>Math.floor(r.month)===m); return row ? row.end : (scheduleB.length ? scheduleB[scheduleB.length-1].end : 0); });
+
   const ctx = document.getElementById('compareChart').getContext('2d');
   if(compareChart){
     compareChart.data.labels = labels;
@@ -685,25 +736,25 @@ function renderComparison(scheduleA, scheduleB, labelA, labelB){
     compareChart.update();
     return;
   }
+
   compareChart = new Chart(ctx, {
     type: 'line',
-    data: { labels, datasets: [
-      { label: labelA, data: balA, borderColor: '#c9a84b', tension: 0.25 },
-      { label: labelB, data: balB, borderColor: '#2b6cb0', tension: 0.25 }
-    ]},
+    data: {
+      labels,
+      datasets: [
+        { label: labelA, data: balA, borderColor: '#c9a84b', tension: 0.25 },
+        { label: labelB, data: balB, borderColor: '#2b6cb0', tension: 0.25 }
+      ]
+    },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: { legend: { labels: { color: 'var(--accent)' } } },
-      scales: {
-        x: { ticks: { color: 'var(--accent)' } },
-        y: { ticks: { color: 'var(--accent)' } }
-      }
+      scales: { x: { ticks: { color: 'var(--accent)' } }, y: { ticks: { color: 'var(--accent)' } } }
     }
   });
 }
 
-/* Fill comparison tables */
 function fillTable(selector, schedule){
   const tbody = document.querySelector(selector + ' tbody');
   tbody.innerHTML = '';
@@ -716,13 +767,78 @@ function fillTable(selector, schedule){
       <td>${fmt(r.interest)}</td>
       <td>${fmt(r.amortization)}</td>
       <td>${fmt(r.payment)}</td>
-      <td>${r.discount ? fmt(r.discount) : '-'}</td>
+      <td>${r.discount? (typeof r.discount==='number' && r.discount>0 ? (r.note? r.discount : fmt(r.discount)) : '-') : '-'}</td>
       <td>${fmt(r.end)}</td>`;
     tbody.appendChild(tr);
   });
 }
 
-/* === EVENTOS === */
+/* Export functions */
+function exportXlsx(objA, objB, meta){
+  const wb = XLSX.utils.book_new();
+  const sheetA = objA.schedule.map(r=>({
+    Mes: r.month, SaldoInicial: r.balanceStart, Juros: r.interest, Amortizacao: r.amortization,
+    Prestacao: r.payment, Desconto: r.discount||0, SaldoFinal: r.end, Nota: r.note||''
+  }));
+  const wsA = XLSX.utils.json_to_sheet(sheetA);
+  XLSX.utils.book_append_sheet(wb, wsA, meta.titleA || 'TabelaA');
+
+  const sheetB = objB.schedule.map(r=>({
+    Mes: r.month, SaldoInicial: r.balanceStart, Juros: r.interest, Amortizacao: r.amortization,
+    Prestacao: r.payment, Desconto: r.discount||0, SaldoFinal: r.end, Nota: r.note||''
+  }));
+  const wsB = XLSX.utils.json_to_sheet(sheetB);
+  XLSX.utils.book_append_sheet(wb, wsB, meta.titleB || 'TabelaB');
+
+  const metaArr = [
+    ['APSPARCEIROS - Simulação Bancária (modo real)'],
+    ['Data', meta.date],
+    ['Valor', meta.amount],
+    ['Entrada', meta.downpayment],
+    ['Prazo (meses)', meta.months],
+    ['Taxa mensal', (meta.rateMonthly*100).toFixed(6) + '%'],
+    ['Sistema A', meta.titleA],
+    ['Sistema B', meta.titleB]
+  ];
+  const wsMeta = XLSX.utils.aoa_to_sheet(metaArr);
+  XLSX.utils.book_append_sheet(wb, wsMeta, 'Resumo');
+
+  const wbout = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+  saveAs(new Blob([wbout], {type:'application/octet-stream'}), 'simulacao_bancaria_quitacao.xlsx');
+}
+
+async function exportPdf(element, meta, settleInfo){
+  const { jsPDF } = window.jspdf;
+  const canvas = await html2canvas(element, { scale: 1 });
+  const img = canvas.toDataURL('image/png');
+  const pdf = new jsPDF('landscape', 'pt', 'a4');
+  const w = pdf.internal.pageSize.getWidth();
+  const h = pdf.internal.pageSize.getHeight();
+  pdf.setFontSize(12);
+  pdf.text('APSPARCEIROS - Simulação Bancária (modo real)', 40, 30);
+  pdf.text(meta.date, 40, 46);
+  if(settleInfo) pdf.text('Quitação: PV='+fmt(settleInfo.pv)+' | Valor com negociação='+fmt(settleInfo.settlement), 40, 62);
+  pdf.addImage(img, 'PNG', 40, 80, w-80, h-140);
+  pdf.save('simulacao_bancaria_quitacao.pdf');
+}
+
+/* Events */
+document.getElementById('indexFile').addEventListener('change', (e)=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  parseIndexCSV(f, ()=>{ alert('Série de índices importada ('+Object.keys(indexSeries).length+' meses)'); });
+});
+
+document.getElementById('themeSelect').addEventListener('change', (e)=>{
+  if(e.target.value === 'light') document.documentElement.classList.add('light');
+  else document.documentElement.classList.remove('light');
+});
+
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  if(!confirm('Restaurar valores iniciais?')) return;
+  location.reload();
+});
+
 document.getElementById('btnCalc').addEventListener('click', ()=>{
   const amount = Number(document.getElementById('loanAmount').value)||0;
   const down = Number(document.getElementById('downPayment').value)||0;
@@ -732,28 +848,83 @@ document.getElementById('btnCalc').addEventListener('click', ()=>{
   const auto = document.getElementById('autoConvert').value === '1';
   const sysA = document.getElementById('systemA').value;
   const sysB = document.getElementById('systemB').value;
-  const monthlyRate = toMonthlyRate(rateVal, ratePeriod, auto);
+  const indexType = document.getElementById('indexSelect').value;
+  const carType = document.getElementById('carenciaType').value;
+  const carMonths = Number(document.getElementById('carenciaMonths').value)||0;
+  const dayCount = document.getElementById('dayCount').value;
+  const discountPct = Number(document.getElementById('discountPercent').value)||0;
+  const discountCount = Number(document.getElementById('discountCount').value)||0;
+  const settleMonth = Number(document.getElementById('settleMonth').value)||0;
+  const settleDiscountPct = Number(document.getElementById('settleDiscountPct').value)||0;
 
-  const resA = generateBankSchedule({ amount, down, months, rate: monthlyRate, system: sysA });
-  const resB = generateBankSchedule({ amount, down, months, rate: monthlyRate, system: sysB });
+  const monthlyRate = toMonthlyRate(rateVal, ratePeriod, auto);
+  const idxMap = indexSeries || {};
+
+  // Pass settlement parameters into generator so it will produce a final schedule truncated at the settlement month
+  const resA = generateBankSchedule({
+    amount, down, months, rate: monthlyRate, system: sysA, carType, carMonths, dayCount,
+    indexMap: idxMap, reaj: 0, discountPct, discountCount,
+    settleMonth, settleDiscountPct
+  });
+
+  const resB = generateBankSchedule({
+    amount, down, months, rate: monthlyRate, system: sysB, carType, carMonths, dayCount,
+    indexMap: idxMap, reaj: 0, discountPct, discountCount,
+    settleMonth, settleDiscountPct
+  });
 
   fillTable('#tableA', resA.schedule);
   fillTable('#tableB', resB.schedule);
+  document.getElementById('titleA').innerText = 'A — ' + sysA.toUpperCase();
+  document.getElementById('titleB').innerText = 'B — ' + sysB.toUpperCase();
 
   renderComparison(resA.schedule, resB.schedule, 'A-'+sysA.toUpperCase(), 'B-'+sysB.toUpperCase());
 
-  // === Totais A/B ===
-  const totInterestA = resA.schedule.reduce((s,x)=>s+Number(x.interest),0);
-  const avgPayA = resA.schedule.reduce((s,x)=>s+Number(x.payment),0)/resA.schedule.length;
-  const totInterestB = resB.schedule.reduce((s,x)=>s+Number(x.interest),0);
-  const avgPayB = resB.schedule.reduce((s,x)=>s+Number(x.payment),0)/resB.schedule.length;
+  // KPIs A (totais acima)
+const totInterestA = resA.schedule.reduce((s,x)=>s+Number(x.interest),0);
+const avgPayA = resA.schedule.length ? (resA.schedule.reduce((s,x)=>s+Number(x.payment),0)/resA.schedule.length) : 0;
+document.getElementById('avgInstallmentA').innerText = fmt(avgPayA);
+document.getElementById('totalInterestA').innerText = fmt(totInterestA);
+document.getElementById('financedA').innerText = fmt(resA.financed);
 
-  document.getElementById('avgInstallmentA').innerText = fmt(avgPayA);
-  document.getElementById('totalInterestA').innerText = fmt(totInterestA);
-  document.getElementById('financedA').innerText = fmt(resA.financed);
-  document.getElementById('avgInstallmentB').innerText = fmt(avgPayB);
-  document.getElementById('totalInterestB').innerText = fmt(totInterestB);
-  document.getElementById('financedB').innerText = fmt(resB.financed);
+// KPIs B (totais acima)
+const totInterestB = resB.schedule.reduce((s,x)=>s+Number(x.interest),0);
+const avgPayB = resB.schedule.length ? (resB.schedule.reduce((s,x)=>s+Number(x.payment),0)/resB.schedule.length) : 0;
+document.getElementById('avgInstallmentB').innerText = fmt(avgPayB);
+document.getElementById('totalInterestB').innerText = fmt(totInterestB);
+document.getElementById('financedB').innerText = fmt(resB.financed);
+
+  // store
+  lastA = resA; lastB = resB; lastMeta = { date: new Date().toLocaleString('pt-BR',{year:'numeric',month:'short',day:'numeric'}), amount, downpayment: down, months, rateMonthly: monthlyRate, titleA: sysA, titleB: sysB };
+
+  // If generator returned settlement info (when settleMonth provided), show it
+  if(resA.settlement){
+    lastSettle = resA.settlement;
+    document.getElementById('settleResult').innerText = `Quitação no mês ${settleMonth}: PV dos fluxos = ${fmt(resA.settlement.pv)}; Valor com negociação: ${fmt(resA.settlement.settlement)} (parcelas remanescentes calculadas)`;
+  } else {
+    lastSettle = null;
+    document.getElementById('settleResult').innerText = 'Nenhuma quitação simulada.';
+  }
+});
+
+document.getElementById('btnExportXlsx').addEventListener('click', ()=>{
+  if(!lastA) return alert('Gere uma simulação primeiro.');
+  exportXlsx(lastA, lastB || {schedule:[]}, lastMeta);
+});
+
+document.getElementById('btnExportPdf').addEventListener('click', async ()=>{
+  if(!lastA) return alert('Gere uma simulação primeiro.');
+  const elem = document.getElementById('tableWrap');
+  await exportPdf(elem, lastMeta, lastSettle);
+});
+
+document.getElementById('btnTogglePrint').addEventListener('click', ()=> window.print());
+
+/* Auto-run on load */
+window.addEventListener('load', ()=>{
+  document.documentElement.classList.remove('light'); // default: dark
+  document.getElementById('themeSelect').value = 'dark';
+  setTimeout(()=>document.getElementById('btnCalc').click(), 120);
 });
 </script>
 </body>
