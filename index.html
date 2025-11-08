@@ -620,42 +620,41 @@ function generateBankSchedule(opts){
     }
   }
 
-  // Discount on last N amortizable installments
-  if(discountPct>0 && discountCount>0){
-    const amortRows = schedule.filter(s=>s.payment>0);
-    const L = amortRows.length;
-    for(let j=0;j<discountCount;j++){
-      const idx = L-1 - j;
-      if(idx < 0) break;
-      const row = amortRows[idx];
-      const globalIdx = schedule.findIndex(s=>s.month === row.month);
-      const originalPayment = schedule[globalIdx].payment;
-      const discountAmount = originalPayment * (discountPct/100);
-      const newPayment = Math.max(0, originalPayment - discountAmount);
-      const newAmort = newPayment - schedule[globalIdx].interest;
-      schedule[globalIdx].discount = roundBank(discountAmount);
-      schedule[globalIdx].payment = roundBank(newPayment);
-      schedule[globalIdx].amortization = roundBank(newAmort);
-      schedule[globalIdx].end = roundBank(schedule[globalIdx].balanceStart - newAmort);
+ // Discount on last N amortizable installments
+if(discountPct>0 && discountCount>0){
+  const amortRows = schedule.filter(s=>s.payment>0);
+  const L = amortRows.length;
+  for(let j=0;j<discountCount;j++){
+    const idx = L-1 - j;
+    if(idx < 0) break;
+    const row = amortRows[idx];
+    const globalIdx = schedule.findIndex(s=>s.month === row.month);
+    const originalPayment = schedule[globalIdx].payment;
+    const discountAmount = originalPayment * (discountPct/100);
+    const newPayment = Math.max(0, originalPayment - discountAmount);
+    const newAmort = newPayment - schedule[globalIdx].interest;
+    schedule[globalIdx].discount = roundBank(discountAmount);
+    schedule[globalIdx].payment = roundBank(newPayment);
+    schedule[globalIdx].amortization = roundBank(newAmort);
+    schedule[globalIdx].end = roundBank(schedule[globalIdx].balanceStart - newAmort);
 
-      // propagate forward
-      for(let t = globalIdx + 1; t < schedule.length; t++){
-        schedule[t].balanceStart = roundBank(schedule[t-1].end);
-        schedule[t].interest = roundBank(schedule[t].balanceStart * i);
-        if(schedule[t].payment > 0){
-          // if previously discounted, preserve discount; otherwise keep payment and recompute amort
-          const orig = schedule[t].payment + (schedule[t].discount || 0);
-          if(schedule[t].discount){
-            schedule[t].payment = roundBank(orig - schedule[t].discount);
-          }
-          schedule[t].amortization = roundBank(schedule[t].payment - schedule[t].interest);
-          schedule[t].end = roundBank(schedule[t].balanceStart - schedule[t].amortization);
-        } else {
-          schedule[t].end = schedule[t].balanceStart;
+    // propagate forward
+    for(let t = globalIdx + 1; t < schedule.length; t++){
+      schedule[t].balanceStart = roundBank(schedule[t-1].end);
+      schedule[t].interest = roundBank(schedule[t].balanceStart * i);
+      if(schedule[t].payment > 0){
+        const orig = schedule[t].payment + (schedule[t].discount || 0);
+        if(schedule[t].discount){
+          schedule[t].payment = roundBank(orig - schedule[t].discount);
         }
+        schedule[t].amortization = roundBank(schedule[t].payment - schedule[t].interest);
+        schedule[t].end = roundBank(schedule[t].balanceStart - schedule[t].amortization);
+      } else {
+        schedule[t].end = schedule[t].balanceStart;
       }
     }
   }
+}
 
   // QUITAÇÃO REAL: if settleMonth provided, compute PV of remaining flows and insert a settlement row
   if(settleMonth && settleMonth > 0){
