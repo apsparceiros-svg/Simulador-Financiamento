@@ -475,198 +475,336 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 
 </div>
 <script>
-// ==================== CONFIGURAÇÃO INICIAL ====================
-document.getElementById('nowDate').innerText = new Date().toLocaleDateString();
-
-// Tema
-const themeSelect = document.getElementById('themeSelect');
-themeSelect.addEventListener('change', ()=>document.documentElement.className = themeSelect.value);
-document.documentElement.className = 'dark';
-
-// Reset
-document.getElementById('btnReset').addEventListener('click', ()=>location.reload());
+/* Utilities & state */
+document.getElementById('nowDate').innerText = new Date().toLocaleString('pt-BR',{year:'numeric',month:'short',day:'numeric'});
+let indexSeries = {}; // month -> factor
+let compareChart = null;
+let lastA = null, lastB = null, lastMeta = null, lastSettle = null;
 
 // Formatação
-function formatCurrency(v){return (v!==undefined?Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'-');}
+function fmt(v){ return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:2}); }
+function roundBank(v){ return Math.round((Number(v)||0)*100)/100; }
+function toMonthlyRate(value, period, auto){ 
+  const v = Number(value)/100; 
+  if(period==='a.m') return v; 
+  if(auto) return Math.pow(1+v,1/12)-1; 
+  return v/12; 
+}
 
-// ==================== FUNÇÕES FINANCEIRAS ====================
-function calcPRICE(P,i,n){return P*i/(1-Math.pow(1+i,-n));}
-function calcSAC(P,n){return P/n;}
-function calcSimple(saldo,rate){return saldo*rate;}
-function calcCompound(saldo,rate){return saldo*rate;}
+/* Parse CSV indices */
+function parseIndexCSV(file, cb){
+  const reader = new FileReader();
+  reader.onload = e => {
+    const txt = e.target.result;
+    indexSeries = {};
+    txt.split(/\r?\n/).forEach(line=>{
+      const parts = line.split(/[,;|\t]/).map(s=>s.trim()).filter(Boolean);
+      if(parts.length>=2){
+        const m = Number(parts[0]);
+        const f = Number(parts[1]);
+        if(!isNaN(m) && !isNaN(f)) indexSeries[m] = f;
+      }
+    });
+    cb && cb();
+  };
+  reader.readAsText(file);
+}
 
-// ==================== SACRE REALISTA ====================
-let indexData = []; // índices importados pelo CSV
+/* Core: generate schedule with settlement applied (real quitação) */
+function generateBankSchedule(opts){
+  const amount = Number(opts.amount)||0;
+  const down = Number(opts.down)||0;
+  const totalMonths = Math.max(1,Math.floor(opts.months||1));
+  const i = Number(opts.rate)||0;
+  const system = opts.system;
+  const carType = opts.carType;
+  const carMonths = Math.max(0,Math.floor(opts.carMonths||0));
+  const indexMap = opts.indexMap || {};
+  const reajPct = Number(opts.reaj)||0;
+  const discountPct = Math.max(0, Number(opts.discountPct)||0);
+  const discountCount = Math.max(0, Math.floor(opts.discountCount||0));
+  const settleMonth = Number(opts.settleMonth)||0;
+  const settleDiscountPct = Number(opts.settleDiscountPct)||0;
 
-function calcSACRE_Real(P, n, indices=[], carenciaType='none', carenciaMonths=0){
-    let rows = [], saldo = P;
-    for(let m=1; m<=n; m++){
-        let ind = indices[m-1] ? indices[m-1] : 1; // fator de correção
-        let amort = P/n;
-        let juros = saldo*(ind-1); // correção monetária
+  let financed = Math.max(0, amount - down);
+  let balance = financed;
+  const schedule = [];
 
-        // Carência
-        if(carenciaMonths>0 && m<=carenciaMonths){
-            if(carenciaType==='juros'){ amort=0; }
-            if(carenciaType==='total'){ juros=0; amort=0; saldo *= ind; }
-        }
+  function push(m, start, interest, amort, payment, discount, end, note){
+    schedule.push({
+      month: m,
+      balanceStart: roundBank(start),
+      interest: roundBank(interest),
+      amortization: roundBank(amort),
+      payment: roundBank(payment),
+      discount: roundBank(discount||0),
+      end: roundBank(end),
+      note: note||''
+    });
+  }
 
-        let prest = amort + juros;
-        let saldoIni = saldo;
-        saldo -= amort;
-        if(saldo<0) saldo=0;
-
-        rows.push({month:m, saldoIni, juros, amort, prest, desconto:0, saldoFim:saldo});
-        if(saldo===0) break;
+  // Carência total: capitaliza
+  if(carType==='total' && carMonths>0){
+    for(let m=1;m<=carMonths;m++){
+      const interest = balance * i;
+      balance += interest;
+      if(system==='sacre'){
+        const factor = indexMap[m] || (1+reajPct/100);
+        balance *= factor;
+      }
+      push(m, balance - interest, interest, 0, 0, 0, balance);
     }
-    return rows;
-}
+  }
 
-// ==================== BUILD TABLE ====================
-function buildTable(P, rate, n, system, discount, settle, carenciaType, carenciaMonths){
-    let rows=[], saldo=P, totalInterest=0, totalAmort=0, totalPay=0;
-    let sacreRows = (system==='sacre') ? calcSACRE_Real(P,n,indexData,carenciaType,carenciaMonths) : [];
-
-    for(let m=1; m<=n; m++){
-        let juros=0, amort=0, prest=0, saldoIni=saldo;
-
-        if(system==='price'){
-            juros = saldo*rate;
-            amort = calcPRICE(P,rate,n)-juros;
-        } else if(system==='sac'){
-            amort = P/n;
-            juros = saldo*rate;
-        } else if(system==='sacre'){
-            if(m>sacreRows.length) break;
-            let r = sacreRows[m-1];
-            saldoIni = r.saldoIni; juros = r.juros; amort = r.amort; prest = r.prest;
-        } else if(system==='simples'){
-            juros = calcSimple(saldo, rate);
-            amort = 0;
-        } else if(system==='compostos'){
-            juros = calcCompound(saldo, rate);
-            amort = 0;
-        }
-
-        if(system!=='sacre'){ prest = juros + amort; }
-
-        // Carência para outros sistemas
-        if(carenciaMonths>0 && m<=carenciaMonths){
-            if(carenciaType==='juros'){ amort=0; prest=juros; }
-            if(carenciaType==='total'){ amort=0; prest=0; saldo *= (1+rate); }
-        }
-
-        // Desconto parcelas
-        let desconto = 0;
-        if(m>n-discount.count){ desconto = prest*(discount.percent/100); prest -= desconto; }
-
-        // Quitação antecipada
-        if(settle.month>0 && m===settle.month){
-            prest *= (1-settle.pct/100);
-            saldo=0;
-        }
-
-        saldo -= amort;
-        if(saldo<0) saldo=0;
-
-        totalInterest += juros;
-        totalAmort += amort;
-        totalPay += prest;
-
-        rows.push({month:m, saldoIni, juros, amort, prest, desconto, saldoFim:saldo});
-        if(saldo===0) break;
+  // Carência juros: pay interest only
+  if(carType==='juros' && carMonths>0){
+    for(let m=1;m<=carMonths;m++){
+      const interest = balance * i;
+      push(m, balance, interest, 0, interest, 0, balance);
     }
+  }
 
-    return {rows, totalInterest, totalAmort, totalPay};
-}
+  const startMonth = (carType==='none')?1:(carMonths+1);
+  const amortMonths = totalMonths - ((carType==='none')?0:carMonths);
+  const M = Math.max(1, amortMonths);
 
-// ==================== RENDER TABELAS ====================
-function renderTables(){
-    const P=Number(document.getElementById('loanAmount').value)-Number(document.getElementById('downPayment').value);
-    const n=Number(document.getElementById('termMonths').value);
-    let rate = Number(document.getElementById('rateValue').value)/100;
-    const ratePeriod = document.getElementById('ratePeriod').value;
-    if(ratePeriod==='a.a'){ rate /= 12; } // converte anual para mensal
-    const systemA=document.getElementById('systemA').value;
-    const systemB=document.getElementById('systemB').value;
-    const discount={percent:Number(document.getElementById('discountPercent').value), count:Number(document.getElementById('discountCount').value)};
-    const settle={month:Number(document.getElementById('settleMonth').value), pct:Number(document.getElementById('settleDiscountPct').value)};
-    const carenciaType = document.getElementById('carenciaType').value;
-    const carenciaMonths = Number(document.getElementById('carenciaMonths').value);
+  // Sistemas financeiros
+  if(system==='compostos'){
+    for(let m=1;m<=totalMonths;m++){
+      const balStart = balance;
+      const interest = balStart * i;
+      balance = balStart + interest;
+      const payment = (m===totalMonths) ? roundBank(balance) : 0;
+      push(m, balStart, interest, 0, payment, 0, balance);
+    }
+  } else if(system==='price'){
+    const ann = i;
+    const payment = (ann===0) ? (balance / M) : balance * ann / (1 - Math.pow(1+ann, -M));
+    for(let k=0;k<M;k++){
+      const m = startMonth + k;
+      const balStart = balance;
+      const interest = balStart * i;
+      const amort = payment - interest;
+      balance = balStart - amort;
+      push(m, balStart, interest, amort, payment, 0, balance);
+    }
+  } else if(system==='sac'){
+    const amortConst = balance / M;
+    for(let k=0;k<M;k++){
+      const m = startMonth + k;
+      const balStart = balance;
+      const interest = balStart * i;
+      const amort = amortConst;
+      const payment = interest + amort;
+      balance = balStart - amort;
+      push(m, balStart, interest, amort, payment, 0, balance);
+    }
+  } else if(system==='sacre'){
+    const amortConst = balance / M;
+    for(let k=0;k<M;k++){
+      const m = startMonth + k;
+      const balStart = balance;
+      const interest = balStart * i;
+      const amort = amortConst;
+      const payment = interest + amort;
+      balance = balStart - amort;
+      const factor = indexMap[m] || (1+reajPct/100);
+      balance *= factor;
+      push(m, balStart, interest, amort, payment, 0, balance);
+    }
+  } else if(system==='simples'){
+    const amortConst = financed / M;
+    for(let k=0;k<M;k++){
+      const m = startMonth + k;
+      const balStart = balance;
+      const interest = financed * i;
+      const amort = amortConst;
+      const payment = interest + amort;
+      balance = balStart - amort;
+      push(m, balStart, interest, amort, payment, 0, balance);
+    }
+  }
 
-    const dataA = buildTable(P, rate, n, systemA, discount, settle, carenciaType, carenciaMonths);
-    const dataB = buildTable(P, rate, n, systemB, discount, settle, carenciaType, carenciaMonths);
+  // Desconto últimas parcelas
+  if(discountPct>0 && discountCount>0){
+    const amortRows = schedule.filter(s => s.payment>0);
+    const L = amortRows.length;
+    for(let j=0;j<discountCount;j++){
+      const idx = L - 1 - j;
+      if(idx<0) break;
+      const row = amortRows[idx];
+      const globalIdx = schedule.findIndex(s=>s.month===row.month);
+      const originalPayment = schedule[globalIdx].payment;
+      const originalAmort = schedule[globalIdx].amortization;
+      const discountAmount = originalPayment*(discountPct/100);
+      const newPayment = Math.max(0, originalPayment - discountAmount);
+      const newInterest = Math.max(0, newPayment - originalAmort);
+      schedule[globalIdx].discount = roundBank(discountAmount);
+      schedule[globalIdx].payment = roundBank(newPayment);
+      schedule[globalIdx].interest = roundBank(newInterest);
+      schedule[globalIdx].amortization = roundBank(originalAmort);
+      schedule[globalIdx].end = roundBank(schedule[globalIdx].balanceStart - originalAmort);
+      for(let t=globalIdx+1;t<schedule.length;t++){
+        const prev = schedule[t-1];
+        schedule[t].balanceStart = roundBank(prev.end);
+        schedule[t].interest = roundBank(schedule[t].balanceStart*i);
+        if(schedule[t].payment>0){
+          schedule[t].amortization = roundBank(schedule[t].payment - schedule[t].interest);
+          schedule[t].end = roundBank(schedule[t].balanceStart - schedule[t].amortization);
+        } else {
+          schedule[t].end = schedule[t].balanceStart;
+        }
+      }
+    }
+  }
 
-    // Render tabela
-    ['A','B'].forEach(id=>{
-        const tbody = document.querySelector(`#table${id} tbody`);
-        tbody.innerHTML = '';
-        const data = id==='A'?dataA:dataB;
-        data.rows.forEach(r=>{
-            let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${r.month}</td><td>${formatCurrency(r.saldoIni)}</td><td>${formatCurrency(r.juros)}</td><td>${formatCurrency(r.amort)}</td><td>${formatCurrency(r.prest)}</td><td>${formatCurrency(r.desconto)}</td><td>${formatCurrency(r.saldoFim)}</td>`;
-            tbody.appendChild(tr);
-        });
-    });
-
-    // Totais
-    document.getElementById('totalPayA').innerText = formatCurrency(dataA.totalPay);
-    document.getElementById('totalInterestA').innerText = formatCurrency(dataA.totalInterest);
-    document.getElementById('totalAmortA').innerText = formatCurrency(dataA.totalAmort);
-    document.getElementById('totalPayB').innerText = formatCurrency(dataB.totalPay);
-    document.getElementById('totalInterestB').innerText = formatCurrency(dataB.totalInterest);
-    document.getElementById('totalAmortB').innerText = formatCurrency(dataB.totalAmort);
-
-    // Gráfico
-    const ctx=document.getElementById('compareChart').getContext('2d');
-    if(window.compareChart) window.compareChart.destroy();
-    window.compareChart = new Chart(ctx,{
-        type:'line',
-        data:{
-            labels: dataA.rows.map(r=>r.month),
-            datasets:[
-                {label:'Sistema A', data:dataA.rows.map(r=>r.saldoFim), borderColor:'#c9a84b', backgroundColor:'rgba(201,168,75,0.2)'},
-                {label:'Sistema B', data:dataB.rows.map(r=>r.saldoFim), borderColor:'#2b6cb0', backgroundColor:'rgba(43,108,176,0.2)'}
-            ]
-        },
-        options:{responsive:true, plugins:{legend:{position:'top'}}, scales:{y:{beginAtZero:true}}}
-    });
-}
-
-// ==================== BOTÕES ====================
-document.getElementById('btnCalc').addEventListener('click', renderTables);
-document.getElementById('btnExportXlsx').addEventListener('click', ()=>{
-    let wb=XLSX.utils.book_new();
-    ['tableA','tableB'].forEach(id=>{
-        let ws=XLSX.utils.table_to_sheet(document.getElementById(id));
-        XLSX.utils.book_append_sheet(wb, ws, id);
-    });
-    XLSX.writeFile(wb,'simulacao.xlsx');
-});
-document.getElementById('btnExportPdf').addEventListener('click', ()=>{
-    html2canvas(document.getElementById('tableWrap')).then(canvas=>{
-        const img = canvas.toDataURL('image/png');
-        const pdf = new jspdf.jsPDF('p','mm','a4');
-        const w=210, h=canvas.height*(w/canvas.width);
-        pdf.addImage(img,'PNG',0,0,w,h);
-        pdf.save('simulacao.pdf');
-    });
-});
-
-// ==================== IMPORTAÇÃO CSV ====================
-document.getElementById('indexFile').addEventListener('change', e=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = function(ev){
-        const text = ev.target.result;
-        indexData = text.split(/\r?\n/).map(line=>{
-            let parts = line.split(',');
-            return parseFloat(parts[1]) || 1;
-        });
+  // Quitação antecipada real
+  if(settleMonth && settleMonth>0){
+    let pv=0;
+    for(const r of schedule){
+      if(r.month>settleMonth && r.payment>0){
+        const t = r.month - settleMonth;
+        pv += r.payment / Math.pow(1+i, t);
+      }
+    }
+    const settlementRaw = pv*(1-(settleDiscountPct||0)/100);
+    const settlement = roundBank(settlementRaw);
+    const upto = schedule.filter(s=>s.month<=settleMonth);
+    const lastRow = upto.length ? upto[upto.length-1] : null;
+    const balanceBeforeSettlement = lastRow ? lastRow.end : (schedule.length ? schedule[schedule.length-1].end : roundBank(financed));
+    const settleRowMonth = settleMonth + 0.1;
+    const settleRow = {
+      month: settleRowMonth,
+      balanceStart: roundBank(balanceBeforeSettlement),
+      interest: 0,
+      amortization: roundBank(settlement),
+      payment: roundBank(settlement),
+      discount: roundBank(settleDiscountPct||0),
+      end: 0,
+      note: 'Quitação antecipada (PV descontado)'
     };
-    reader.readAsText(file);
+    const finalSchedule = upto.slice();
+    finalSchedule.push(settleRow);
+    return { financed, schedule: finalSchedule, settlement:{pv:roundBank(pv), settlement} };
+  }
+
+  return { financed, schedule };
+}
+
+/* Render & table */
+function renderComparison(scheduleA, scheduleB, labelA, labelB){
+  const maxM = Math.max(scheduleA.length ? Math.ceil(scheduleA[scheduleA.length-1].month) : 0, scheduleB.length ? Math.ceil(scheduleB[scheduleB.length-1].month) : 0);
+  const labels = [];
+  for(let i=1;i<=maxM;i++) labels.push('M'+i);
+  const balA = labels.map((l,i)=>{ const m=i+1; const row = scheduleA.find(r=>Math.floor(r.month)===m); return row ? row.end : (scheduleA.length ? scheduleA[scheduleA.length-1].end : 0); });
+  const balB = labels.map((l,i)=>{ const m=i+1; const row = scheduleB.find(r=>Math.floor(r.month)===m); return row ? row.end : (scheduleB.length ? scheduleB[scheduleB.length-1].end : 0); });
+  const ctx = document.getElementById('compareChart').getContext('2d');
+  if(compareChart){
+    compareChart.data.labels = labels;
+    compareChart.data.datasets[0].data = balA;
+    compareChart.data.datasets[1].data = balB;
+    compareChart.update();
+    return;
+  }
+  compareChart = new Chart(ctx, {
+    type:'line',
+    data:{labels,datasets:[
+      {label:labelA,data:balA,borderColor:'#c9a84b',tension:0.25},
+      {label:labelB,data:balB,borderColor:'#2b6cb0',tension:0.25}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'var(--accent)'}}},scales:{x:{ticks:{color:'var(--accent)'}},y:{ticks:{color:'var(--accent)'}}}}
+  });
+}
+
+function fillTable(selector, schedule){
+  const tbody = document.querySelector(selector+' tbody');
+  tbody.innerHTML='';
+  schedule.forEach(r=>{
+    const tr = document.createElement('tr');
+    const monthLabel = Number.isInteger(r.month) ? `M${r.month}` : `M${Math.floor(r.month)} (Quitação)`;
+    const note = r.note ? ` — ${r.note}` : '';
+    tr.innerHTML = `<td>${monthLabel}${note}</td>
+      <td>${fmt(r.balanceStart)}</td>
+      <td>${fmt(r.interest)}</td>
+      <td>${fmt(r.amortization)}</td>
+      <td>${fmt(r.payment)}</td>
+      <td>${r.discount? (typeof r.discount==='number' && r.discount>0 ? (r.note? r.discount : fmt(r.discount)) : '-') : '-'}</td>
+      <td>${fmt(r.end)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* Export */
+function exportXlsx(objA,objB,meta){
+  const wb = XLSX.utils.book_new();
+  const sheetA = objA.schedule.map(r=>({Mes:r.month,SaldoInicial:r.balanceStart,Juros:r.interest,Amortizacao:r.amortization,Prestacao:r.payment,Desconto:r.discount||0,SaldoFinal:r.end,Nota:r.note||''}));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(sheetA),meta.titleA||'TabelaA');
+  const sheetB = objB.schedule.map(r=>({Mes:r.month,SaldoInicial:r.balanceStart,Juros:r.interest,Amortizacao:r.amortization,Prestacao:r.payment,Desconto:r.discount||0,SaldoFinal:r.end,Nota:r.note||''}));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(sheetB),meta.titleB||'TabelaB');
+  const metaArr=[['APSPARCEIROS - Simulação Bancária (modo real)'],['Data',meta.date],['Valor',meta.amount],['Entrada',meta.downpayment],['Prazo (meses)',meta.months],['Taxa mensal',(meta.rateMonthly*100).toFixed(6)+'%'],['Sistema A',meta.titleA],['Sistema B',meta.titleB]];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(metaArr),'Resumo');
+  const wbout = XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  saveAs(new Blob([wbout],{type:'application/octet-stream'}),'simulacao_bancaria_quitacao.xlsx');
+}
+
+async function exportPdf(element,meta,settleInfo){
+  const { jsPDF } = window.jspdf;
+  const canvas = await html2canvas(element,{scale:1});
+  const img = canvas.toDataURL('image/png');
+  const pdf = new jsPDF('landscape','pt','a4');
+  const w = pdf.internal.pageSize.getWidth();
+  const h = pdf.internal.pageSize.getHeight();
+  pdf.setFontSize(12);
+  pdf.text('APSPARCEIROS - Simulação Bancária (modo real)',40,30);
+  pdf.text(meta.date,40,46);
+  if(settleInfo) pdf.text('Quitação: PV='+fmt(settleInfo.pv)+' | Valor com negociação='+fmt(settleInfo.settlement),40,62);
+  pdf.addImage(img,'PNG',40,80,w-80,h-140);
+  pdf.save('simulacao_bancaria_quitacao.pdf');
+}
+
+/* Events */
+document.getElementById('indexFile').addEventListener('change', (e)=>{ const f=e.target.files[0]; if(f) parseIndexCSV(f,()=>alert('Série de índices importada ('+Object.keys(indexSeries).length+' meses)')); });
+document.getElementById('themeSelect').addEventListener('change',(e)=>{ if(e.target.value==='light') document.documentElement.classList.add('light'); else document.documentElement.classList.remove('light'); });
+document.getElementById('btnReset').addEventListener('click',()=>{ if(confirm('Restaurar valores iniciais?')) location.reload(); });
+
+document.getElementById('btnCalc').addEventListener('click',()=>{
+  const amount = Number(document.getElementById('loanAmount').value)||0;
+  const down = Number(document.getElementById('downPayment').value)||0;
+  const months = Number(document.getElementById('termMonths').value)||1;
+  const rateVal = Number(document.getElementById('rateValue').value)||0;
+  const ratePeriod = document.getElementById('ratePeriod').value;
+  const auto = document.getElementById('autoConvert').value==='1';
+  const sysA = document.getElementById('systemA').value;
+  const sysB = document.getElementById('systemB').value;
+  const carType = document.getElementById('carenciaType').value;
+  const carMonths = Number(document.getElementById('carenciaMonths').value)||0;
+  const discountPct = Number(document.getElementById('discountPercent').value)||0;
+  const discountCount = Number(document.getElementById('discountCount').value)||0;
+  const settleMonth = Number(document.getElementById('settleMonth').value)||0;
+  const settleDiscountPct = Number(document.getElementById('settleDiscountPct').value)||0;
+  const monthlyRate = toMonthlyRate(rateVal, ratePeriod, auto);
+  const idxMap = indexSeries || {};
+
+  const resA = generateBankSchedule({amount, down, months, rate:monthlyRate, system:sysA, carType, carMonths, indexMap:idxMap, discountPct, discountCount, settleMonth, settleDiscountPct});
+  const resB = generateBankSchedule({amount, down, months, rate:monthlyRate, system:sysB, carType, carMonths, indexMap:idxMap, discountPct, discountCount, settleMonth, settleDiscountPct});
+
+  fillTable('#tableA',resA.schedule);
+  fillTable('#tableB',resB.schedule);
+  document.getElementById('titleA').innerText='A — '+sysA.toUpperCase();
+  document.getElementById('titleB').innerText='B — '+sysB.toUpperCase();
+  renderComparison(resA.schedule,resB.schedule,'A-'+sysA.toUpperCase(),'B-'+sysB.toUpperCase());
+
+  // Totais
+  lastA=resA; lastB=resB;
+  lastMeta={date:new Date().toLocaleString('pt-BR',{year:'numeric',month:'short',day:'numeric'}), amount, downpayment: down, months, rateMonthly: monthlyRate, titleA: sysA, titleB: sysB};
+  lastSettle = resA.settlement || null;
 });
+
+document.getElementById('btnExportXlsx').addEventListener('click',()=>{ if(!lastA) return alert('Gere uma simulação primeiro.'); exportXlsx(lastA,lastB||{schedule:[]},lastMeta); });
+document.getElementById('btnExportPdf').addEventListener('click',async()=>{ if(!lastA) return alert('Gere uma simulação primeiro.'); await exportPdf(document.getElementById('tableWrap'),lastMeta,lastSettle); });
+document.getElementById('btnTogglePrint').addEventListener('click',()=>window.print());
+
+window.addEventListener('load',()=>{ document.documentElement.classList.remove('light'); document.getElementById('themeSelect').value='dark'; setTimeout(()=>document.getElementById('btnCalc').click(),120); });
 </script>
 </body>
 </html>
