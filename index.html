@@ -620,40 +620,46 @@ function generateBankSchedule(opts){
     }
   }
 
- // ✅ Aplicação de desconto nas últimas N parcelas (como amortização extra)
+ // 🏦 Modelo bancário real: desconto aplicado sobre os juros (mantém amortização original)
 if (discountPct > 0 && discountCount > 0) {
-  // Pega todas as parcelas que possuem pagamento
+  // Filtra as parcelas com pagamento normal
   const amortRows = schedule.filter(s => s.payment > 0);
   const L = amortRows.length;
 
   for (let j = 0; j < discountCount; j++) {
-    const idx = L - 1 - j; // últimas parcelas
+    const idx = L - 1 - j; // últimas N parcelas
     if (idx < 0) break;
 
     const row = amortRows[idx];
     const globalIdx = schedule.findIndex(s => s.month === row.month);
 
-    // Valor do desconto sobre a prestação original
     const originalPayment = schedule[globalIdx].payment;
+    const originalAmort = schedule[globalIdx].amortization;
+
+    // Valor do desconto sobre o pagamento total
     const discountAmount = originalPayment * (discountPct / 100);
 
-    // ✅ Lógica corrigida: o desconto é considerado amortização adicional
-    const newAmort = schedule[globalIdx].amortization + discountAmount;
-    const newPayment = schedule[globalIdx].payment; // o cliente paga o mesmo valor
-    const newEnd = schedule[globalIdx].balanceStart - newAmort;
+    // Novo pagamento com desconto
+    const newPayment = Math.max(0, originalPayment - discountAmount);
 
-    // Atualiza a linha da parcela
+    // 🧮 Mantém amortização, ajusta juros (modelo bancário)
+    const newInterest = newPayment - originalAmort;
+
+    // Evita juros negativos
+    const finalInterest = Math.max(0, newInterest);
+
+    // Atualiza os campos da parcela
     schedule[globalIdx].discount = roundBank(discountAmount);
-    schedule[globalIdx].amortization = roundBank(newAmort);
     schedule[globalIdx].payment = roundBank(newPayment);
-    schedule[globalIdx].end = roundBank(newEnd);
+    schedule[globalIdx].interest = roundBank(finalInterest);
+    schedule[globalIdx].amortization = roundBank(originalAmort);
+    schedule[globalIdx].end = roundBank(schedule[globalIdx].balanceStart - originalAmort);
 
-    // 🔁 Propaga o novo saldo para as parcelas seguintes
+    // ✅ Propaga o saldo ajustado adiante (caso haja efeito residual de arredondamento)
     for (let t = globalIdx + 1; t < schedule.length; t++) {
       const prev = schedule[t - 1];
       schedule[t].balanceStart = roundBank(prev.end);
       schedule[t].interest = roundBank(schedule[t].balanceStart * i);
-
       if (schedule[t].payment > 0) {
         schedule[t].amortization = roundBank(schedule[t].payment - schedule[t].interest);
         schedule[t].end = roundBank(schedule[t].balanceStart - schedule[t].amortization);
