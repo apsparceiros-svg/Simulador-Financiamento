@@ -61,12 +61,14 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-fon
   padding: 0;
 }
 
-/* Contêiner de rolagem (agora o sticky funciona!) */
+/* Contêiner de rolagem (somente corpo rola) */
 .table-scroll {
   max-height: 520px;
   overflow-y: auto;
+  overflow-x: hidden;
   display: block;
   border-radius: 0 0 10px 10px;
+  position: relative; /* contexto para sticky */
 }
 
 /* Tabelas */
@@ -74,16 +76,17 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  position: relative; /* garante contexto do sticky */
 }
 
 /* Cabeçalhos fixos */
 thead th {
   position: sticky;
   top: 0;
-  background: var(--panel);
+  z-index: 2;
+  background: inherit;
   padding: 8px;
   text-align: right;
-  z-index: 2;
 }
 
 tbody td {
