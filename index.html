@@ -794,6 +794,20 @@ document.getElementById('btnCalc').addEventListener('click',()=>{
   document.getElementById('titleB').innerText='B — '+sysB.toUpperCase();
   renderComparison(resA.schedule,resB.schedule,'A-'+sysA.toUpperCase(),'B-'+sysB.toUpperCase());
 
+  // Totais e KPIs — Tabela A
+const totInterestA = resA.schedule.reduce((s,r)=>s+Number(r.interest),0);
+const avgPayA = resA.schedule.length ? (resA.schedule.reduce((s,r)=>s+Number(r.payment),0)/resA.schedule.length) : 0;
+document.getElementById('avgInstallmentA').innerText = fmt(avgPayA);
+document.getElementById('totalInterestA').innerText = fmt(totInterestA);
+document.getElementById('financedA').innerText = fmt(resA.financed);
+
+// Totais e KPIs — Tabela B
+const totInterestB = resB.schedule.reduce((s,r)=>s+Number(r.interest),0);
+const avgPayB = resB.schedule.length ? (resB.schedule.reduce((s,r)=>s+Number(r.payment),0)/resB.schedule.length) : 0;
+document.getElementById('avgInstallmentB').innerText = fmt(avgPayB);
+document.getElementById('totalInterestB').innerText = fmt(totInterestB);
+document.getElementById('financedB').innerText = fmt(resB.financed);
+
   // Totais
   lastA=resA; lastB=resB;
   lastMeta={date:new Date().toLocaleString('pt-BR',{year:'numeric',month:'short',day:'numeric'}), amount, downpayment: down, months, rateMonthly: monthlyRate, titleA: sysA, titleB: sysB};
