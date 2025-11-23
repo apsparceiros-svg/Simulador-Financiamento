@@ -1000,19 +1000,28 @@ document.getElementById('btnCalc').addEventListener('click', ()=>{
 
   renderComparison(resA.schedule, resB.schedule, 'A-'+sysA.toUpperCase(), 'B-'+sysB.toUpperCase());
 
-  // KPIs A (totais acima)
-const totInterestA = resA.schedule.reduce((s,x)=>s+Number(x.interest),0);
-const avgPayA = resA.schedule.length ? (resA.schedule.reduce((s,x)=>s+Number(x.payment),0)/resA.schedule.length) : 0;
-document.getElementById('avgInstallmentA').innerText = fmt(avgPayA);
-document.getElementById('totalInterestA').innerText = fmt(totInterestA);
-document.getElementById('financedA').innerText = fmt(resA.financed);
+  // KPIs A (totais acima) — recalcula totais diretamente das schedules (já com desconto aplicado)
+  const totInterestA = roundBank(resA.schedule.reduce((s,x)=>s+Number(x.interest||0),0));
+  const totalPaymentA = roundBank(resA.schedule.reduce((s,x)=>s+Number(x.payment||0),0));
+  const totalDiscountA = roundBank(resA.schedule.reduce((s,x)=>s+Number(x.discount||0),0));
+  const avgPayA = resA.schedule.length ? (resA.schedule.reduce((s,x)=>s+Number(x.payment||0),0)/resA.schedule.length) : 0;
+  document.getElementById('avgInstallmentA').innerText = fmt(avgPayA);
+  // atualiza total de juros e total pago
+  try{ document.getElementById('totalInterestA').innerText = fmt(totInterestA); }catch(e){}
+  try{ document.getElementById('totalPaidA').innerText = fmt(totalPaymentA); }catch(e){}
+  try{ document.getElementById('totalDiscountA').innerText = fmt(totalDiscountA); }catch(e){}
+  document.getElementById('financedA').innerText = fmt(resA.financed);
 
-// KPIs B (totais acima)
-const totInterestB = resB.schedule.reduce((s,x)=>s+Number(x.interest),0);
-const avgPayB = resB.schedule.length ? (resB.schedule.reduce((s,x)=>s+Number(x.payment),0)/resB.schedule.length) : 0;
-document.getElementById('avgInstallmentB').innerText = fmt(avgPayB);
-document.getElementById('totalInterestB').innerText = fmt(totInterestB);
-document.getElementById('financedB').innerText = fmt(resB.financed);
+  // KPIs B (totais acima)
+  const totInterestB = roundBank(resB.schedule.reduce((s,x)=>s+Number(x.interest||0),0));
+  const totalPaymentB = roundBank(resB.schedule.reduce((s,x)=>s+Number(x.payment||0),0));
+  const totalDiscountB = roundBank(resB.schedule.reduce((s,x)=>s+Number(x.discount||0),0));
+  const avgPayB = resB.schedule.length ? (resB.schedule.reduce((s,x)=>s+Number(x.payment||0),0)/resB.schedule.length) : 0;
+  document.getElementById('avgInstallmentB').innerText = fmt(avgPayB);
+  try{ document.getElementById('totalInterestB').innerText = fmt(totInterestB); }catch(e){}
+  try{ document.getElementById('totalPaidB').innerText = fmt(totalPaymentB); }catch(e){}
+  try{ document.getElementById('totalDiscountB').innerText = fmt(totalDiscountB); }catch(e){}
+  document.getElementById('financedB').innerText = fmt(resB.financed);
 
   // store
   lastA = resA; lastB = resB; lastMeta = { date: new Date().toLocaleString('pt-BR',{year:'numeric',month:'short',day:'numeric'}), amount, downpayment: down, months, rateMonthly: monthlyRate, titleA: sysA, titleB: sysB };
