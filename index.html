@@ -475,15 +475,27 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 
 </div>
 <script>
+/* ==== Simulador corrigido — versão comentada (mantém estrutura original) ====
+   - Opção B: manter estrutura geral, mas corrigir lógica
+   - SACRE A: aplicação de correção anual (se índice mensal fornecido, usa ele)
+   - Descontos: só sobre juros, não altera amortização nem cronograma
+   - Quitação (PV): cálculo descontado corretamente
+*/
+
 /* Utilities & state */
 document.getElementById('nowDate').innerText = new Date().toLocaleString('pt-BR',{year:'numeric',month:'short',day:'numeric'});
-let indexSeries = {}; // month -> factor
+let indexSeries = {}; // month -> factor (ex: 1.002)
 let compareChart = null;
 let lastA = null, lastB = null, lastMeta = null, lastSettle = null;
 
 function fmt(v){ return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:2}); }
 function roundBank(v){ return Math.round((Number(v)||0)*100)/100; }
-function toMonthlyRate(value, period, auto){ const v = Number(value)/100; if(period==='a.m') return v; if(auto) return Math.pow(1+v,1/12)-1; return v/12; }
+function toMonthlyRate(value, period, auto){
+  const v = Number(value)/100;
+  if(period==='a.m') return v;
+  if(auto) return Math.pow(1+v,1/12)-1; // convert geometric annual -> monthly
+  return v/12; // simple division
+}
 
 /* Parse CSV indices */
 function parseIndexCSV(file, cb){
@@ -491,8 +503,10 @@ function parseIndexCSV(file, cb){
   reader.onload = e => {
     const txt = e.target.result;
     indexSeries = {};
-    txt.split(/\r?\n/).forEach(line=>{
-      const parts = line.split(/[,;|\t]/).map(s=>s.trim()).filter(Boolean);
+    txt.split(/
+?
+/).forEach(line=>{
+      const parts = line.split(/[,;|	]/).map(s=>s.trim()).filter(Boolean);
       if(parts.length>=2){
         const m = Number(parts[0]);
         const f = Number(parts[1]);
@@ -504,6 +518,22 @@ function parseIndexCSV(file, cb){
   reader.readAsText(file);
 }
 
+/* ---- Helper financial functions ---- */
+function pricePayment(pv, rate, n){
+  if(n<=0) return 0;
+  if(rate===0) return roundBank(pv/n);
+  return roundBank(pv * rate / (1 - Math.pow(1+rate, -n)));
+}
+
+/* Apply SACRE annual correction factor: if monthly index present use it, otherwise distribute annual reaj across months */
+function getSacreFactor(month, indexMap, reajAnnualPct){
+  // if monthly factor in indexMap, return it
+  if(indexMap && indexMap[month]) return indexMap[month];
+  // otherwise convert annual reajPct into monthly multiplicative factor
+  const monthly = Math.pow(1 + (Number(reajAnnualPct)||0)/100, 1/12);
+  return monthly;
+}
+
 /* Core: generate schedule with settlement applied (real quitação) */
 function generateBankSchedule(opts){
   // opts: amount, down, months, rate (monthly), system, carType, carMonths, dayCount, indexMap, reajPct, discountPct, discountCount, settleMonth, settleDiscountPct
@@ -511,11 +541,11 @@ function generateBankSchedule(opts){
   const down = Number(opts.down)||0;
   const totalMonths = Math.max(1,Math.floor(opts.months||1));
   const i = Number(opts.rate)||0; // monthly decimal
-  const system = opts.system;
-  const carType = opts.carType;
+  const system = opts.system || 'price';
+  const carType = opts.carType || 'none';
   const carMonths = Math.max(0,Math.floor(opts.carMonths||0));
   const indexMap = opts.indexMap || {};
-  const reajPct = Number(opts.reaj)||0;
+  const reajPct = Number(opts.reaj)||0; // annual percentual for SACRE A
   const discountPct = Math.max(0, Number(opts.discountPct)||0);
   const discountCount = Math.max(0, Math.floor(opts.discountCount)||0);
   const settleMonth = Number(opts.settleMonth)||0;
@@ -538,24 +568,25 @@ function generateBankSchedule(opts){
     });
   }
 
-  // Carência total: capitaliza
+  // --- CARÊNCIAS ---
+  // Carência total: capitaliza juros (e aplica SACRE fator se necessário)
   if(carType==='total' && carMonths>0){
     for(let m=1;m<=carMonths;m++){
       const interest = balance * i;
       balance += interest;
       if(system==='sacre'){
-        const factor = indexMap[m] || (1+reajPct/100);
-        balance *= factor;
+        const factor = getSacreFactor(m, indexMap, reajPct);
+        balance = roundBank(balance * factor);
       }
-      push(m, balance - interest, interest, 0, 0, 0, balance);
+      push(m, roundBank(balance - interest), interest, 0, 0, 0, balance, 'Carência total');
     }
   }
 
-  // Carência juros: pay interest only
+  // Carência juros: paga só juros
   if(carType==='juros' && carMonths>0){
     for(let m=1;m<=carMonths;m++){
       const interest = balance * i;
-      push(m, balance, interest, 0, interest, 0, balance);
+      push(m, balance, interest, 0, roundBank(interest), 0, balance, 'Carência juros');
     }
   }
 
@@ -563,221 +594,97 @@ function generateBankSchedule(opts){
   const amortMonths = totalMonths - ((carType==='none')?0:carMonths);
   const M = Math.max(1, amortMonths);
 
-  // Juros Compostos (acumulados) - pagamento único no final
+  // --- GERAÇÃO INICIAL CONFORME SISTEMA ---
   if(system==='compostos'){
+    // juros capitalizados, pagamento único no fim
     for(let m=1;m<=totalMonths;m++){
       const balStart = balance;
       const interest = balStart * i;
-      balance = balStart + interest;
+      balance = roundBank(balStart + interest);
       const payment = (m===totalMonths) ? roundBank(balance) : 0;
       push(m, balStart, interest, 0, payment, 0, balance);
     }
   } else if(system==='price'){
     const ann = i;
-    const payment = (ann===0) ? (balance / M) : balance * ann / (1 - Math.pow(1+ann, -M));
+    const paymentConst = pricePayment(balance, ann, M);
     for(let k=0;k<M;k++){
       const m = startMonth + k;
       const balStart = balance;
       const interest = balStart * i;
-      const amort = payment - interest;
-      balance = balStart - amort;
-      push(m, balStart, interest, amort, payment, 0, balance);
+      const amort = roundBank(paymentConst - interest);
+      // safety: amort cannot exceed balStart
+      const amortAdj = Math.min(roundBank(amort), roundBank(balStart));
+      const payment = roundBank(interest + amortAdj);
+      balance = roundBank(balStart - amortAdj);
+      push(m, balStart, interest, amortAdj, payment, 0, balance);
     }
   } else if(system==='sac'){
-    const amortConst = balance / M;
+    const amortConst = roundBank(balance / M);
     for(let k=0;k<M;k++){
       const m = startMonth + k;
       const balStart = balance;
       const interest = balStart * i;
       const amort = amortConst;
-      const payment = interest + amort;
-      balance = balStart - amort;
+      const payment = roundBank(interest + amort);
+      balance = roundBank(balStart - amort);
       push(m, balStart, interest, amort, payment, 0, balance);
     }
   } else if(system==='sacre'){
-    const amortConst = balance / M;
+    // SACRE A: usamos indexMap se houver, caso contrario aplicamos reajPct anual convertido em monthly
+    const amortConst = roundBank(balance / M);
     for(let k=0;k<M;k++){
       const m = startMonth + k;
       const balStart = balance;
       const interest = balStart * i;
       const amort = amortConst;
-      const payment = interest + amort;
-      balance = balStart - amort;
-      const factor = indexMap[m] || (1+reajPct/100);
-      balance *= factor;
+      const payment = roundBank(interest + amort);
+      balance = roundBank(balStart - amort);
+      // aplicar fator SACRE (corrige SALDO APÓS amortização)
+      const factor = getSacreFactor(m, indexMap, reajPct);
+      balance = roundBank(balance * factor);
       push(m, balStart, interest, amort, payment, 0, balance);
     }
   } else if(system==='simples'){
-    const amortConst = financed / M;
+    // juros simples sobre o financiamento original
+    const amortConst = roundBank(financed / M);
     for(let k=0;k<M;k++){
       const m = startMonth + k;
       const balStart = balance;
-      const interest = financed * i;
+      const interest = financed * i; // juros sobre montante inicial
       const amort = amortConst;
-      const payment = interest + amort;
-      balance = balStart - amort;
+      const payment = roundBank(interest + amort);
+      balance = roundBank(balStart - amort);
       push(m, balStart, interest, amort, payment, 0, balance);
     }
   }
 
- // 🏦 Modelo bancário real: desconto aplicado sobre os juros (mantém amortização original)
-// === BLOCO DE DESCONTO REESCRITO: aplica desconto só nos juros e regenera parcelamento remanescente ===
-if (discountPct > 0 && discountCount > 0) {
-  // Filtra as parcelas com pagamento normal (exclui carência sem pagamento)
-  const amortRows = schedule.filter(s => s.payment > 0);
-  const L = amortRows.length;
-  if (L > 0) {
-    // vamos anotar quais meses (month) foram afetados
-    const affectedMonths = [];
-
-    // aplicamos desconto nas últimas `discountCount` parcelas (do fim para o início)
+  // --- APLICAR DESCONTOS (MODELO BANCÁRIO REAL) ---
+  // Regra: desconto somente sobre a parcela de juros; amortização e cronograma NÃO são alterados
+  if (discountPct > 0 && discountCount > 0) {
+    const payRows = schedule.filter(s => s.payment > 0);
+    const L = payRows.length;
     for (let j = 0; j < discountCount; j++) {
-      const idx = L - 1 - j; // índice dentro de amortRows
+      const idx = L - 1 - j; // últimas parcelas
       if (idx < 0) break;
-      const row = amortRows[idx];
-      const globalIdx = schedule.findIndex(s => s.month === row.month);
-      if (globalIdx < 0) continue;
-
-      const originalInterest = schedule[globalIdx].interest;
-      const originalAmort = schedule[globalIdx].amortization;
-
-      // ---- Desconto somente sobre juros (modelo bancário) ----
-      const discountAmount = originalInterest * (discountPct / 100); // valor em R$
-      const newInterest = roundBank(originalInterest - discountAmount);
-      const newAmort = originalAmort; // amortização NÃO muda
-      const newPayment = roundBank(newInterest + newAmort);
-
-      // Atualiza a parcela afetada
-      schedule[globalIdx].discount = roundBank(discountAmount); // armazeno valor monetário do desconto
-      schedule[globalIdx].payment = roundBank(newPayment);
-      schedule[globalIdx].interest = roundBank(newInterest);
-      schedule[globalIdx].amortization = roundBank(newAmort);
-      schedule[globalIdx].end = roundBank(schedule[globalIdx].balanceStart - newAmort);
-
-      affectedMonths.push(globalIdx);
-    }
-
-    // Se não houve alterações, nada a fazer
-    if (affectedMonths.length > 0) {
-      // Encontrar primeiro índice global alterado (menor) para recomeçar a re-geração dali pra frente
-      const firstAffectedIdx = Math.min(...affectedMonths);
-
-      // Saldo remanescente a partir deste ponto
-      let curBalance = schedule[firstAffectedIdx].end;
-
-      // Contar quantas parcelas remanescentes com pagamento existem após firstAffectedIdx
-      // (incluindo se houver parcelamento naquela mesma linha a partir de next index)
-      const remainingRows = schedule.slice(firstAffectedIdx + 1);
-      const remainingPaymentCount = remainingRows.filter(r => r.payment > 0).length;
-
-      // Regera as parcelas seguintes conforme o sistema
-      if (system === 'compostos') {
-        // acumula juros até final (mantemos o que já foi gerado anteriormente: recomputamos com novo saldo)
-        for (let t = firstAffectedIdx + 1; t < schedule.length; t++) {
-          const m = schedule[t].month;
-          const balStart = curBalance;
-          const interest = balStart * i;
-          curBalance = roundBank(balStart + interest);
-          const payment = (t === schedule.length - 1) ? roundBank(curBalance) : 0;
-          schedule[t].balanceStart = roundBank(balStart);
-          schedule[t].interest = roundBank(interest);
-          schedule[t].amortization = roundBank(0);
-          schedule[t].payment = roundBank(payment);
-          schedule[t].end = roundBank(curBalance);
-        }
-      } else if (system === 'price') {
-        // número de pagamentos remanescentes
-        const Mrem = Math.max(1, remainingPaymentCount);
-        // recalcula prestação fixa a partir do novo saldo
-        const ann = i;
-        const newPaymentConst = (ann === 0) ? roundBank(curBalance / Mrem) : roundBank(curBalance * ann / (1 - Math.pow(1 + ann, -Mrem)));
-
-        let k = 0;
-        for (let t = firstAffectedIdx + 1; t < schedule.length; t++) {
-          schedule[t].balanceStart = roundBank(curBalance);
-          schedule[t].payment = (schedule[t].payment > 0) ? newPaymentConst : 0;
-          schedule[t].interest = roundBank(schedule[t].balanceStart * i);
-          if (schedule[t].payment > 0) {
-            schedule[t].amortization = roundBank(schedule[t].payment - schedule[t].interest);
-            if (schedule[t].amortization < 0) { // safety
-              schedule[t].amortization = 0;
-              schedule[t].payment = roundBank(schedule[t].interest);
-            }
-            schedule[t].end = roundBank(schedule[t].balanceStart - schedule[t].amortization);
-            curBalance = schedule[t].end;
-            k++;
-          } else {
-            schedule[t].amortization = 0;
-            schedule[t].end = roundBank(schedule[t].balanceStart);
-          }
-        }
-      } else if (system === 'sac' || system === 'sacre') {
-        // contamos quantas parcelas remanescentes com pagamento - para amortConst
-        const Mrem = Math.max(1, remainingPaymentCount);
-        let amortConst = roundBank(curBalance / Mrem);
-        for (let t = firstAffectedIdx + 1; t < schedule.length; t++) {
-          schedule[t].balanceStart = roundBank(curBalance);
-          schedule[t].interest = roundBank(schedule[t].balanceStart * i);
-          if (schedule[t].payment > 0) {
-            schedule[t].amortization = amortConst;
-            schedule[t].payment = roundBank(schedule[t].interest + schedule[t].amortization);
-            schedule[t].end = roundBank(schedule[t].balanceStart - schedule[t].amortization);
-
-            // para SACRE aplica fator de correção depois (mesma lógica que você tinha)
-            if (system === 'sacre') {
-              const m = schedule[t].month;
-              const factor = indexMap[m] || (1 + reajPct / 100);
-              schedule[t].end = roundBank(schedule[t].end * factor);
-            }
-
-            curBalance = schedule[t].end;
-          } else {
-            schedule[t].amortization = 0;
-            schedule[t].end = roundBank(schedule[t].balanceStart);
-          }
-        }
-      } else if (system === 'simples') {
-        // Juros simples original era calculado sobre 'financed'. Mantemos a lógica, e recalculamos amortizações iguais
-        const Mrem = Math.max(1, remainingPaymentCount);
-        const amortConst = roundBank(financed / ( (schedule.filter(s=>s.payment>0).length) )); // mantém total original
-        for (let t = firstAffectedIdx + 1; t < schedule.length; t++) {
-          schedule[t].balanceStart = roundBank(curBalance);
-          schedule[t].interest = roundBank(financed * i);
-          if (schedule[t].payment > 0) {
-            schedule[t].amortization = amortConst;
-            schedule[t].payment = roundBank(schedule[t].interest + schedule[t].amortization);
-            schedule[t].end = roundBank(schedule[t].balanceStart - schedule[t].amortization);
-            curBalance = schedule[t].end;
-          } else {
-            schedule[t].amortization = 0;
-            schedule[t].end = roundBank(schedule[t].balanceStart);
-          }
-        }
-      } else {
-        // fallback: apenas repropaga saldo/juros/amort conforme pagamento atual (segurança)
-        for (let t = firstAffectedIdx + 1; t < schedule.length; t++) {
-          schedule[t].balanceStart = roundBank(curBalance);
-          schedule[t].interest = roundBank(schedule[t].balanceStart * i);
-          if (schedule[t].payment > 0) {
-            schedule[t].amortization = roundBank(schedule[t].payment - schedule[t].interest);
-            if (schedule[t].amortization < 0) {
-              schedule[t].amortization = 0;
-              schedule[t].payment = roundBank(schedule[t].interest);
-            }
-            schedule[t].end = roundBank(schedule[t].balanceStart - schedule[t].amortization);
-            curBalance = schedule[t].end;
-          } else {
-            schedule[t].end = roundBank(schedule[t].balanceStart);
-          }
-        }
-      }
+      const row = payRows[idx];
+      const pos = schedule.findIndex(s => s.month === row.month);
+      if (pos < 0) continue;
+      const J = schedule[pos].interest;
+      const A = schedule[pos].amortization;
+      const discountValue = roundBank(J * (discountPct / 100));
+      const newJ = roundBank(J - discountValue);
+      const newP = roundBank(newJ + A);
+      // atualiza somente a parcela afetada
+      schedule[pos].discount = roundBank(discountValue);
+      schedule[pos].interest = newJ;
+      schedule[pos].payment = newP;
+      schedule[pos].end = roundBank(schedule[pos].balanceStart - A);
     }
   }
-}
 
-  // QUITAÇÃO REAL: if settleMonth provided, compute PV of remaining flows and insert a settlement row
+  // --- QUITAÇÃO ANTECIPADA (PV descontado) ---
   if(settleMonth && settleMonth > 0){
-    // PV of remaining payments after settleMonth
+    // calculamos PV dos pagamentos remanescentes (após settleMonth) descontando pela taxa mensal i
     let pv = 0;
     for(const r of schedule){
       if(r.month > settleMonth && r.payment > 0){
@@ -788,26 +695,22 @@ if (discountPct > 0 && discountCount > 0) {
     const settlementRaw = pv * (1 - (settleDiscountPct || 0)/100);
     const settlement = roundBank(settlementRaw);
 
-    // Keep schedule up to settleMonth (including it if exists); if settleMonth is during carencia months, we'll keep until that month.
+    // mantemos a tabela até o mês de quitação e inserimos linha de quitação
     const upto = schedule.filter(s => s.month <= settleMonth);
-    // Determine current balance start for settlement: if there is an entry for settleMonth use its end, else use last end available
     const lastRow = upto.length ? upto[upto.length-1] : null;
     const balanceBeforeSettlement = lastRow ? lastRow.end : (schedule.length ? schedule[schedule.length-1].end : roundBank(financed));
 
-    // Insert settlement row as last real row with a small note; month uses .1 to sort after integer months if needed
-    const settleRowMonth = settleMonth + 0.1;
     const settleRow = {
-      month: settleRowMonth,
+      month: settleMonth + 0.1,
       balanceStart: roundBank(balanceBeforeSettlement),
       interest: 0,
-      amortization: roundBank(settlement), // entire amount reduces balance to 0
-      payment: roundBank(settlement),
+      amortization: settlement,
+      payment: settlement,
       discount: roundBank((settleDiscountPct||0)),
       end: 0,
       note: 'Quitação antecipada (PV descontado)'
     };
 
-    // Build final schedule: upto + settlement row
     const finalSchedule = upto.slice();
     finalSchedule.push(settleRow);
     return { financed, schedule: finalSchedule, settlement: { pv: roundBank(pv), settlement } };
@@ -882,7 +785,7 @@ function fillTable(selector, schedule){
   });
 }
 
-/* Export functions */
+/* Export functions (mantive como estavam) */
 function exportXlsx(objA, objB, meta){
   const wb = XLSX.utils.book_new();
   const sheetA = objA.schedule.map(r=>({
@@ -931,7 +834,7 @@ async function exportPdf(element, meta, settleInfo){
   pdf.save('simulacao_bancaria_quitacao.pdf');
 }
 
-/* Events */
+/* Events & UI wiring */
 document.getElementById('indexFile').addEventListener('change', (e)=>{
   const f = e.target.files[0];
   if(!f) return;
@@ -969,7 +872,6 @@ document.getElementById('btnCalc').addEventListener('click', ()=>{
   const monthlyRate = toMonthlyRate(rateVal, ratePeriod, auto);
   const idxMap = indexSeries || {};
 
-  // Pass settlement parameters into generator so it will produce a final schedule truncated at the settlement month
   const resA = generateBankSchedule({
     amount, down, months, rate: monthlyRate, system: sysA, carType, carMonths, dayCount,
     indexMap: idxMap, reaj: 0, discountPct, discountCount,
@@ -990,23 +892,22 @@ document.getElementById('btnCalc').addEventListener('click', ()=>{
   renderComparison(resA.schedule, resB.schedule, 'A-'+sysA.toUpperCase(), 'B-'+sysB.toUpperCase());
 
   // KPIs A (totais acima)
-const totInterestA = resA.schedule.reduce((s,x)=>s+Number(x.interest),0);
-const avgPayA = resA.schedule.length ? (resA.schedule.reduce((s,x)=>s+Number(x.payment),0)/resA.schedule.length) : 0;
-document.getElementById('avgInstallmentA').innerText = fmt(avgPayA);
-document.getElementById('totalInterestA').innerText = fmt(totInterestA);
-document.getElementById('financedA').innerText = fmt(resA.financed);
+  const totInterestA = resA.schedule.reduce((s,x)=>s+Number(x.interest),0);
+  const avgPayA = resA.schedule.length ? (resA.schedule.reduce((s,x)=>s+Number(x.payment),0)/resA.schedule.length) : 0;
+  document.getElementById('avgInstallmentA').innerText = fmt(avgPayA);
+  document.getElementById('totalInterestA').innerText = fmt(totInterestA);
+  document.getElementById('financedA').innerText = fmt(resA.financed);
 
-// KPIs B (totais acima)
-const totInterestB = resB.schedule.reduce((s,x)=>s+Number(x.interest),0);
-const avgPayB = resB.schedule.length ? (resB.schedule.reduce((s,x)=>s+Number(x.payment),0)/resB.schedule.length) : 0;
-document.getElementById('avgInstallmentB').innerText = fmt(avgPayB);
-document.getElementById('totalInterestB').innerText = fmt(totInterestB);
-document.getElementById('financedB').innerText = fmt(resB.financed);
+  // KPIs B (totais acima)
+  const totInterestB = resB.schedule.reduce((s,x)=>s+Number(x.interest),0);
+  const avgPayB = resB.schedule.length ? (resB.schedule.reduce((s,x)=>s+Number(x.payment),0)/resB.schedule.length) : 0;
+  document.getElementById('avgInstallmentB').innerText = fmt(avgPayB);
+  document.getElementById('totalInterestB').innerText = fmt(totInterestB);
+  document.getElementById('financedB').innerText = fmt(resB.financed);
 
   // store
   lastA = resA; lastB = resB; lastMeta = { date: new Date().toLocaleString('pt-BR',{year:'numeric',month:'short',day:'numeric'}), amount, downpayment: down, months, rateMonthly: monthlyRate, titleA: sysA, titleB: sysB };
 
-  // If generator returned settlement info (when settleMonth provided), show it
   if(resA.settlement){
     lastSettle = resA.settlement;
     document.getElementById('settleResult').innerText = `Quitação no mês ${settleMonth}: PV dos fluxos = ${fmt(resA.settlement.pv)}; Valor com negociação: ${fmt(resA.settlement.settlement)} (parcelas remanescentes calculadas)`;
@@ -1035,6 +936,7 @@ window.addEventListener('load', ()=>{
   document.getElementById('themeSelect').value = 'dark';
   setTimeout(()=>document.getElementById('btnCalc').click(), 120);
 });
+
 </script>
 </body>
 </html>
