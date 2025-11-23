@@ -636,23 +636,22 @@ if (discountPct > 0 && discountCount > 0) {
     const originalPayment = schedule[globalIdx].payment;
     const originalAmort = schedule[globalIdx].amortization;
 
-    // Valor do desconto sobre o pagamento total
-    const discountAmount = originalPayment * (discountPct / 100);
+    // Desconto aplicado somente sobre juros
+const newInterest = originalInterest * (1 - discountPct / 100);
 
-    // Novo pagamento com desconto
-    const newPayment = Math.max(0, originalPayment - discountAmount);
+// Amortização permanece igual
+const newAmort = originalAmort;
 
-    // 🧮 Mantém amortização, ajusta juros (modelo bancário)
-    const newInterest = newPayment - originalAmort;
+// Novo pagamento
+const newPayment = newInterest + newAmort;
 
-    // Evita juros negativos
-    const finalInterest = Math.max(0, newInterest);
+
 
     // Atualiza os campos da parcela
     schedule[globalIdx].discount = roundBank(discountAmount);
     schedule[globalIdx].payment = roundBank(newPayment);
-    schedule[globalIdx].interest = roundBank(finalInterest);
-    schedule[globalIdx].amortization = roundBank(originalAmort);
+    schedule[globalIdx].interest = roundBank(newInterest);
+    schedule[globalIdx].amortization = roundBank(newAmort);
     schedule[globalIdx].end = roundBank(schedule[globalIdx].balanceStart - originalAmort);
 
     // ✅ Propaga o saldo ajustado adiante (caso haja efeito residual de arredondamento)
