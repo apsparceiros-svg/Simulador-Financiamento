@@ -517,7 +517,7 @@ function generateBankSchedule(opts){
   const indexMap = opts.indexMap || {};
   const reajPct = Number(opts.reaj)||0;
   const discountPct = Math.max(0, Number(opts.discountPct)||0);
-  const discountCount = Math.max(0, Math.floor(opts.discountCount||0));
+  const discountCount = Math.max(0, Math.floor(opts.discountCount)||0);
   const settleMonth = Number(opts.settleMonth)||0;
   const settleDiscountPct = Number(opts.settleDiscountPct)||0;
 
@@ -622,48 +622,67 @@ function generateBankSchedule(opts){
 
  // 🏦 Modelo bancário real: desconto aplicado sobre os juros (mantém amortização original)
 if (discountPct > 0 && discountCount > 0) {
-  // Filtra as parcelas com pagamento normal
+  // Filtra as parcelas com pagamento normal (exclui carência sem pagamento)
   const amortRows = schedule.filter(s => s.payment > 0);
   const L = amortRows.length;
 
+  // aplicamos desconto nas últimas `discountCount` parcelas (do fim para o início)
   for (let j = 0; j < discountCount; j++) {
-    const idx = L - 1 - j; // últimas N parcelas
+    const idx = L - 1 - j; // índice dentro de amortRows
     if (idx < 0) break;
 
     const row = amortRows[idx];
     const globalIdx = schedule.findIndex(s => s.month === row.month);
+    if (globalIdx < 0) continue;
 
     const originalPayment = schedule[globalIdx].payment;
     const originalAmort = schedule[globalIdx].amortization;
+    const originalInterest = schedule[globalIdx].interest;
 
-    // Desconto aplicado somente sobre juros
-const newInterest = originalInterest * (1 - discountPct / 100);
+    // ---- Desconto somente sobre juros (modelo bancário) ----
+    const discountAmount = originalInterest * (discountPct / 100); // valor em R$
+    const newInterest = originalInterest - discountAmount;
+    const newAmort = originalAmort; // amortização NÃO muda
+    const newPayment = newInterest + newAmort;
 
-// Amortização permanece igual
-const newAmort = originalAmort;
-
-// Novo pagamento
-const newPayment = newInterest + newAmort;
-
-
-
-    // Atualiza os campos da parcela
-    schedule[globalIdx].discount = roundBank(discountAmount);
+    // Atualiza a parcela afetada
+    schedule[globalIdx].discount = roundBank(discountAmount); // armazeno valor monetário do desconto
     schedule[globalIdx].payment = roundBank(newPayment);
     schedule[globalIdx].interest = roundBank(newInterest);
     schedule[globalIdx].amortization = roundBank(newAmort);
-    schedule[globalIdx].end = roundBank(schedule[globalIdx].balanceStart - originalAmort);
+    schedule[globalIdx].end = roundBank(schedule[globalIdx].balanceStart - newAmort);
 
-    // ✅ Propaga o saldo ajustado adiante (caso haja efeito residual de arredondamento)
+    // ✅ Propaga o saldo ajustado adiante (recalcula juros/amortização/end das parcelas seguintes)
     for (let t = globalIdx + 1; t < schedule.length; t++) {
       const prev = schedule[t - 1];
+
+      // novo saldo inicial para a parcela t
       schedule[t].balanceStart = roundBank(prev.end);
+
+      // recalcula juros sobre o novo saldo
       schedule[t].interest = roundBank(schedule[t].balanceStart * i);
+
       if (schedule[t].payment > 0) {
+        // payment pode ser o valor originalmente calculado; amortização = payment - juros recalculado
         schedule[t].amortization = roundBank(schedule[t].payment - schedule[t].interest);
+
+        // evita amortização negativa (caso raro)
+        if (schedule[t].amortization < 0) {
+          schedule[t].amortization = 0;
+          schedule[t].payment = roundBank(schedule[t].interest); // paga só juros
+        }
+
         schedule[t].end = roundBank(schedule[t].balanceStart - schedule[t].amortization);
       } else {
-        schedule[t].end = schedule[t].balanceStart;
+        // parcela sem pagamento (ex: carência total) — mantemos saldo
+        schedule[t].end = roundBank(schedule[t].balanceStart);
+      }
+
+      // Se sistema for SACRE, aplicar fator de correção após amortização como na geração inicial
+      if (system === 'sacre') {
+        const m = schedule[t].month;
+        const factor = indexMap[m] || (1 + reajPct/100);
+        schedule[t].end = roundBank(schedule[t].end * factor);
       }
     }
   }
