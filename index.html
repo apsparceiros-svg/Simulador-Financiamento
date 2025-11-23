@@ -1002,9 +1002,13 @@ document.getElementById('btnCalc').addEventListener('click', ()=>{
 
   // --- Recompute KPIs robustly (garante que totais refletem qualquer modificação no schedule) ---
   function computeTotalsFromSchedule(schedule){
-    const totInterest = roundBank(schedule.reduce((s,x)=>s+Number(x.interest||0),0));
+    // Somamos o juro original por parcela como (interest + discount) — se discount foi usado para registrar o juro reduzido,
+    // então interest + discount = juro original daquela parcela.
+    const originalInterest = roundBank(schedule.reduce((s,x)=> s + Number((x.interest||0) + (x.discount||0)), 0));
+    const totDiscount = roundBank(schedule.reduce((s,x)=> s + Number(x.discount||0), 0));
+    // Juros efetivamente pagos após desconto
+    const totInterest = roundBank(originalInterest - totDiscount);
     const totPayment  = roundBank(schedule.reduce((s,x)=>s+Number(x.payment||0),0));
-    const totDiscount = roundBank(schedule.reduce((s,x)=>s+Number(x.discount||0),0));
     return { totInterest, totPayment, totDiscount };
   }
 
