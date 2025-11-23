@@ -1000,28 +1000,38 @@ document.getElementById('btnCalc').addEventListener('click', ()=>{
 
   renderComparison(resA.schedule, resB.schedule, 'A-'+sysA.toUpperCase(), 'B-'+sysB.toUpperCase());
 
-  // KPIs A (totais acima) — recalcula totais diretamente das schedules (já com desconto aplicado)
-  const totInterestA = roundBank(resA.schedule.reduce((s,x)=>s+Number(x.interest||0),0));
-  const totalPaymentA = roundBank(resA.schedule.reduce((s,x)=>s+Number(x.payment||0),0));
-  const totalDiscountA = roundBank(resA.schedule.reduce((s,x)=>s+Number(x.discount||0),0));
-  const avgPayA = resA.schedule.length ? (resA.schedule.reduce((s,x)=>s+Number(x.payment||0),0)/resA.schedule.length) : 0;
-  document.getElementById('avgInstallmentA').innerText = fmt(avgPayA);
-  // atualiza total de juros e total pago
-  try{ document.getElementById('totalInterestA').innerText = fmt(totInterestA); }catch(e){}
-  try{ document.getElementById('totalPaidA').innerText = fmt(totalPaymentA); }catch(e){}
-  try{ document.getElementById('totalDiscountA').innerText = fmt(totalDiscountA); }catch(e){}
-  document.getElementById('financedA').innerText = fmt(resA.financed);
+  // --- Recompute KPIs robustly (garante que totais refletem qualquer modificação no schedule) ---
+  function computeTotalsFromSchedule(schedule){
+    const totInterest = roundBank(schedule.reduce((s,x)=>s+Number(x.interest||0),0));
+    const totPayment  = roundBank(schedule.reduce((s,x)=>s+Number(x.payment||0),0));
+    const totDiscount = roundBank(schedule.reduce((s,x)=>s+Number(x.discount||0),0));
+    return { totInterest, totPayment, totDiscount };
+  }
 
-  // KPIs B (totais acima)
-  const totInterestB = roundBank(resB.schedule.reduce((s,x)=>s+Number(x.interest||0),0));
-  const totalPaymentB = roundBank(resB.schedule.reduce((s,x)=>s+Number(x.payment||0),0));
-  const totalDiscountB = roundBank(resB.schedule.reduce((s,x)=>s+Number(x.discount||0),0));
+  // Atualiza elementos de UI tentando múltiplos IDs comuns (fallbacks) para evitar problemas de nomeação
+  function writeIfExists(id, value){ try{ const el = document.getElementById(id); if(el) el.innerText = value; }catch(e){} }
+
+  const totalsA = computeTotalsFromSchedule(resA.schedule);
+  const avgPayA = resA.schedule.length ? (resA.schedule.reduce((s,x)=>s+Number(x.payment||0),0)/resA.schedule.length) : 0;
+  writeIfExists('avgInstallmentA', fmt(avgPayA));
+  writeIfExists('totalInterestA', fmt(totalsA.totInterest));
+  writeIfExists('totalInterest', fmt(totalsA.totInterest));
+  writeIfExists('totalPaidA', fmt(totalsA.totPayment));
+  writeIfExists('totalPaid', fmt(totalsA.totPayment));
+  writeIfExists('totalDiscountA', fmt(totalsA.totDiscount));
+  writeIfExists('totalDiscount', fmt(totalsA.totDiscount));
+  writeIfExists('financedA', fmt(resA.financed));
+
+  const totalsB = computeTotalsFromSchedule(resB.schedule);
   const avgPayB = resB.schedule.length ? (resB.schedule.reduce((s,x)=>s+Number(x.payment||0),0)/resB.schedule.length) : 0;
-  document.getElementById('avgInstallmentB').innerText = fmt(avgPayB);
-  try{ document.getElementById('totalInterestB').innerText = fmt(totInterestB); }catch(e){}
-  try{ document.getElementById('totalPaidB').innerText = fmt(totalPaymentB); }catch(e){}
-  try{ document.getElementById('totalDiscountB').innerText = fmt(totalDiscountB); }catch(e){}
-  document.getElementById('financedB').innerText = fmt(resB.financed);
+  writeIfExists('avgInstallmentB', fmt(avgPayB));
+  writeIfExists('totalInterestB', fmt(totalsB.totInterest));
+  writeIfExists('totalPaidB', fmt(totalsB.totPayment));
+  writeIfExists('totalDiscountB', fmt(totalsB.totDiscount));
+  writeIfExists('financedB', fmt(resB.financed));
+
+  // debug logs (removable) - úteis para verificar em runtime se os totais batem com as parcelas
+  console.debug('Totals A:', totalsA, 'Totals B:', totalsB);
 
   // store
   lastA = resA; lastB = resB; lastMeta = { date: new Date().toLocaleString('pt-BR',{year:'numeric',month:'short',day:'numeric'}), amount, downpayment: down, months, rateMonthly: monthlyRate, titleA: sysA, titleB: sysB };
