@@ -532,22 +532,26 @@ function generateBankSchedule(opts){
       interest: roundBank(interest),
       amortization: roundBank(amort),
       payment: roundBank(payment),
-      discount: roundBank(discount||0),
+      discount: (discount === undefined) ? 0 : roundBank(discount),
       end: roundBank(end),
       note: note||''
     });
   }
 
-  // Carência total: capitaliza
-  if(carType==='total' && carMonths>0){
-    for(let m=1;m<=carMonths;m++){
-      const interest = balance * i;
-      balance += interest;
-      if(system==='sacre'){
-        const factor = indexMap[m] || (1+reajPct/100);
-        balance *= factor;
+  // Carência total: capitaliza — corrigindo balanceStart antes de alterar balance
+  if (carType === 'total' && carMonths > 0) {
+    for (let m = 1; m <= carMonths; m++) {
+      const balStart = balance;                    // saldo no início do mês
+      const interest = balStart * i;
+      let balAfter = balStart + interest;
+      if (system === 'sacre') {
+        const factor = indexMap[m] || (1 + reajPct / 100);
+        balAfter = roundBank(balAfter * factor);
+      } else {
+        balAfter = roundBank(balAfter);
       }
-      push(m, balance - interest, interest, 0, 0, 0, balance);
+      balance = balAfter;
+      push(m, roundBank(balStart), roundBank(interest), 0, 0, 0, roundBank(balance));
     }
   }
 
@@ -635,7 +639,7 @@ if (discountPct > 0 && discountCount > 0) {
       const idx = L - 1 - j; // índice dentro de amortRows
       if (idx < 0) break;
       const row = amortRows[idx];
-      const globalIdx = schedule.findIndex(s => s.month === row.month);
+      const globalIdx = schedule.findIndex(s => Math.floor(s.month) === Math.floor(row.month));
       if (globalIdx < 0) continue;
 
       const originalInterest = schedule[globalIdx].interest;
@@ -652,7 +656,15 @@ if (discountPct > 0 && discountCount > 0) {
       schedule[globalIdx].payment = roundBank(newPayment);
       schedule[globalIdx].interest = roundBank(newInterest);
       schedule[globalIdx].amortization = roundBank(newAmort);
-      schedule[globalIdx].end = roundBank(schedule[globalIdx].balanceStart - newAmort);
+
+      // recompute end — para sacre reaplica fator se necessário
+      let recomputedEnd = roundBank(schedule[globalIdx].balanceStart - newAmort);
+      if (system === 'sacre') {
+        const mth = Math.floor(schedule[globalIdx].month);
+        const factor = indexMap[mth] || (1 + reajPct / 100);
+        recomputedEnd = roundBank(recomputedEnd * factor);
+      }
+      schedule[globalIdx].end = recomputedEnd;
 
       affectedMonths.push(globalIdx);
     }
@@ -690,23 +702,34 @@ if (discountPct > 0 && discountCount > 0) {
         const Mrem = Math.max(1, remainingPaymentCount);
         // recalcula prestação fixa a partir do novo saldo
         const ann = i;
-        const newPaymentConst = (ann === 0) ? roundBank(curBalance / Mrem) : roundBank(curBalance * ann / (1 - Math.pow(1 + ann, -Mrem)));
+        // NÃO arredonda aqui — mantém precisão para distribuir centavos
+        let newPaymentConst = (ann === 0) ? (curBalance / Mrem) : (curBalance * ann / (1 - Math.pow(1 + ann, -Mrem)));
 
-        let k = 0;
+        let paymentsAssigned = 0;
         for (let t = firstAffectedIdx + 1; t < schedule.length; t++) {
           schedule[t].balanceStart = roundBank(curBalance);
-          schedule[t].payment = (schedule[t].payment > 0) ? newPaymentConst : 0;
-          schedule[t].interest = roundBank(schedule[t].balanceStart * i);
           if (schedule[t].payment > 0) {
-            schedule[t].amortization = roundBank(schedule[t].payment - schedule[t].interest);
-            if (schedule[t].amortization < 0) { // safety
-              schedule[t].amortization = 0;
-              schedule[t].payment = roundBank(schedule[t].interest);
+            paymentsAssigned++;
+            const isLast = (paymentsAssigned === Mrem);
+            const balStart = schedule[t].balanceStart;
+            const interest = balStart * i;
+            let payment = isLast ? roundBank(curBalance + interest) : roundBank(newPaymentConst);
+
+            // safety: se pagamento < juros, ajusta
+            if (payment < roundBank(interest)) {
+              payment = roundBank(interest);
             }
-            schedule[t].end = roundBank(schedule[t].balanceStart - schedule[t].amortization);
+
+            const amort = roundBank(payment - roundBank(interest));
+            schedule[t].payment = payment;
+            schedule[t].interest = roundBank(interest);
+            schedule[t].amortization = amort;
+            schedule[t].end = roundBank(balStart - amort);
+
             curBalance = schedule[t].end;
-            k++;
           } else {
+            schedule[t].payment = 0;
+            schedule[t].interest = roundBank(schedule[t].balanceStart * i);
             schedule[t].amortization = 0;
             schedule[t].end = roundBank(schedule[t].balanceStart);
           }
@@ -802,7 +825,9 @@ if (discountPct > 0 && discountCount > 0) {
       interest: 0,
       amortization: roundBank(settlement), // entire amount reduces balance to 0
       payment: roundBank(settlement),
-      discount: roundBank((settleDiscountPct||0)),
+      // store both pct and monetary discount to avoid type confusion
+      discountPct: roundBank(settleDiscountPct || 0),
+      discount: roundBank(pv - settlement), // R$ efetivo economizado (pv - settlement)
       end: 0,
       note: 'Quitação antecipada (PV descontado)'
     };
@@ -871,12 +896,13 @@ function fillTable(selector, schedule){
     const tr = document.createElement('tr');
     const monthLabel = (Number.isInteger(r.month)) ? `M${r.month}` : `M${Math.floor(r.month)} (Quitação)`;
     const note = r.note ? ` — ${r.note}` : '';
+    const discountDisplay = (typeof r.discount === 'number' && r.discount > 0) ? fmt(r.discount) : '-';
     tr.innerHTML = `<td>${monthLabel}${note}</td>
       <td>${fmt(r.balanceStart)}</td>
       <td>${fmt(r.interest)}</td>
       <td>${fmt(r.amortization)}</td>
       <td>${fmt(r.payment)}</td>
-      <td>${r.discount? (typeof r.discount==='number' && r.discount>0 ? (r.note? r.discount : fmt(r.discount)) : '-') : '-'}</td>
+      <td>${discountDisplay}</td>
       <td>${fmt(r.end)}</td>`;
     tbody.appendChild(tr);
   });
