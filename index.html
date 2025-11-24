@@ -26,7 +26,7 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-fon
   margin:20px auto;
   padding:20px;
   display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(0,2fr); /* FLEXÍVEL PARA NÃO CORTAR */
+  grid-template-columns:minmax(0,1fr) minmax(0,2fr);
   gap:20px;
   justify-content:center;
   width:100%;
@@ -51,19 +51,19 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-fon
 .kpi .small{margin-bottom:8px;}
 
 /* ===================== */
-/* CORREÇÃO DO SCROLL    */
+/* TABELAS SEM SCROLL HORIZONTAL */
 /* ===================== */
 .table-wrap {
   border-radius: 10px;
   border: 1px solid var(--glass);
   background: var(--panel);
   padding: 0;
-  overflow-x:auto; /* garante scroll horizontal */
+  width:100%;
 }
 
 .table-scroll {
   max-height: 520px;
-  overflow-y: auto;
+  overflow-y: auto; /* apenas scroll vertical */
   display: block;
   border-radius: 0 0 10px 10px;
   position: relative;
@@ -73,7 +73,8 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  position: relative;
+  table-layout: fixed; /* permite colunas encolherem automaticamente */
+  word-wrap: break-word; /* quebra texto longo */
 }
 
 thead th {
@@ -89,6 +90,7 @@ tbody td {
   padding: 8px;
   text-align: right;
   border-bottom: 1px dashed rgba(255,255,255,0.05);
+  overflow-wrap: break-word;
 }
 
 td:first-child,th:first-child{text-align:left;}
@@ -99,10 +101,9 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 /* Comparativo lado a lado */
 .comparison{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); /* empilha em janelas pequenas */
+  grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
   gap:20px;
   width:100%;
-  overflow-x:auto;
 }
 
 /* Theme toggle */
@@ -176,7 +177,7 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 #tableA tbody tr:hover, #tableB tbody tr:hover {background-color: rgba(255,255,255,0.1);transform: scale(1.01);transition: all 0.15s;}
 
 /* CÉLULAS */
-#tableA tbody td, #tableB tbody td {padding: 10px 8px;text-align:right;transition:all 0.15s;}
+#tableA tbody td, #tableB tbody td {padding: 10px 8px;text-align:right;transition:all 0.15s;overflow-wrap:break-word;}
 #tableA tbody td:first-child, #tableB tbody td:first-child{text-align:left;font-weight:600;}
 
 /* RODAPÉ */
