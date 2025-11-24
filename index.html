@@ -52,8 +52,6 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-fon
 /* ===================== */
 /* CORREÇÃO DO SCROLL    */
 /* ===================== */
-
-/* Contêiner externo da tabela */
 .table-wrap {
   border-radius: 10px;
   border: 1px solid var(--glass);
@@ -61,25 +59,22 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-fon
   padding: 0;
 }
 
-/* Contêiner de rolagem (somente corpo rola) */
 .table-scroll {
   max-height: 520px;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
   display: block;
   border-radius: 0 0 10px 10px;
-  position: relative; /* contexto para sticky */
+  position: relative;
 }
 
-/* Tabelas */
 table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  position: relative; /* garante contexto do sticky */
+  position: relative;
 }
 
-/* Cabeçalhos fixos */
 thead th {
   position: sticky;
   top: 0;
@@ -97,7 +92,8 @@ tbody td {
 
 td:first-child,th:first-child{text-align:left;}
 tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
-.chart-area{height:400px;margin-top:12px;}
+.chart-area{height:400px;margin-top:12px;width:100%;}
+.chart-area canvas{width:100% !important;height:auto !important;}
 
 /* Comparativo lado a lado */
 .comparison{
@@ -113,22 +109,7 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 /* Footer */
 .footer{margin-top:12px;color:var(--muted);font-size:13px;}
 
-/* --- MEDIA QUERIES --- */
-@media(max-width:1100px){
-  .container{
-    grid-template-columns:1fr;
-    padding:10px;
-  }
-  .comparison{
-    grid-template-columns:1fr;
-  }
-}
-
-/* ======================== */
-/* MELHORIAS PREMIUM TABELAS */
-/* ======================== */
-
-/* --- TÍTULOS DAS TABELAS --- */
+/* Títulos das tabelas */
 #titleA {
   background-color: #c9a84b;
   color: #0b0b0b;
@@ -153,7 +134,7 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
   margin-bottom: 0;
 }
 
-/* --- BORDAS E FUNDO DAS TABELAS --- */
+/* BORDAS E FUNDO DAS TABELAS */
 #tableA {
   border: 2px solid #c9a84b;
   border-radius: 0 0 12px 12px;
@@ -170,7 +151,7 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
   transition: all 0.2s;
 }
 
-/* --- CABEÇALHOS --- */
+/* CABEÇALHOS */
 #tableA thead th {
   background-color: #f5f0d6;
   color: #0b0b0b;
@@ -187,95 +168,50 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
   z-index: 3;
 }
 
-/* --- LINHAS --- */
-#tableA tbody tr:nth-child(odd) {
-  background-color: rgba(201, 168, 75, 0.08);
+/* LINHAS */
+#tableA tbody tr:nth-child(odd) {background-color: rgba(201, 168, 75, 0.08);}
+#tableB tbody tr:nth-child(odd) {background-color: rgba(43, 108, 176, 0.08);}
+#tableA tbody tr:hover, #tableB tbody tr:hover {background-color: rgba(255,255,255,0.1);transform: scale(1.01);transition: all 0.15s;}
+
+/* CÉLULAS */
+#tableA tbody td, #tableB tbody td {padding: 10px 8px;text-align:right;transition:all 0.15s;}
+#tableA tbody td:first-child, #tableB tbody td:first-child{text-align:left;font-weight:600;}
+
+/* RODAPÉ */
+#tableA tbody tr:last-child td, #tableB tbody tr:last-child td {border-bottom:none;}
+
+/* Totais comparativos */
+.totals-comparison{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.totals-card{padding:15px 20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.2);}
+.totals-card h4{margin-bottom:10px;font-weight:700;text-transform:uppercase;font-size:14px;}
+.totals-card.gold{border-left:4px solid #c9a84b;background-color: rgba(201, 168, 75, 0.08);}
+.totals-card.blue{border-left:4px solid #2b6cb0;background-color: rgba(43, 108, 176, 0.08);}
+.totals-grid{display:flex;flex-direction:column;gap:6px;}
+.totals-grid div{display:flex;justify-content:space-between;align-items:center;}
+.totals-grid span{font-size:13px;color:var(--muted);}
+.totals-grid strong{font-size:15px;font-weight:700;color:var(--accent);}
+
+/* MEDIA QUERIES RESPONSIVAS */
+@media(max-width:1100px){.container{grid-template-columns:1fr;padding:10px;}}
+@media(max-width:900px){.comparison,.totals-comparison{grid-template-columns:1fr;}}
+@media(max-width:600px){
+  .container{gap:10px;padding:8px;}
+  table th, table td{padding:6px 4px;font-size:12px;}
+  .button{padding:10px;font-size:13px;}
+}
+@media(max-width:500px){
+  html,body{font-size:13px;}
+  .small{font-size:11px;}
+  .totals-comparison{gap:10px;}
 }
 
-#tableB tbody tr:nth-child(odd) {
-  background-color: rgba(43, 108, 176, 0.08);
-}
-
-#tableA tbody tr:hover, #tableB tbody tr:hover {
-  background-color: rgba(255,255,255,0.1);
-  transform: scale(1.01);
-  transition: all 0.15s;
-}
-
-/* --- CÉLULAS --- */
-#tableA tbody td, #tableB tbody td {
-  padding: 10px 8px;
-  text-align: right;
-  transition: all 0.15s;
-}
-
-#tableA tbody td:first-child, #tableB tbody td:first-child {
-  text-align: left;
-  font-weight: 600;
-}
-
-/* --- RODAPÉ --- */
-#tableA tbody tr:last-child td, #tableB tbody tr:last-child td {
-  border-bottom: none;
-}
-  /* ====== TOTAIS COMPARATIVOS ====== */
-.totals-comparison {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-.totals-card {
-  padding: 15px 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-
-.totals-card h4 {
-  margin-bottom: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  font-size: 14px;
-}
-
-.totals-card.gold {
-  border-left: 4px solid #c9a84b;
-  background-color: rgba(201, 168, 75, 0.08);
-}
-
-.totals-card.blue {
-  border-left: 4px solid #2b6cb0;
-  background-color: rgba(43, 108, 176, 0.08);
-}
-
-.totals-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.totals-grid div {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.totals-grid span {
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.totals-grid strong {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-/* Responsivo */
-@media(max-width:900px){
-  .totals-comparison {
-    grid-template-columns: 1fr;
-  }
+/* IMPRESSÃO */
+@media print{
+  body{background:white !important;color:black !important;font-size:12px;}
+  .container{display:block;padding:0;}
+  .comparison{display:block;}
+  .chart-area{page-break-inside:avoid;}
+  table{font-size:10px;}
 }
 </style>
 </head>
