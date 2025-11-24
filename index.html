@@ -23,7 +23,6 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-fon
 
 /* --- CONTAINER RESPONSIVO --- */
 .container{
-  width:100%;
   max-width:1400px;
   margin:20px auto;
   padding:20px;
@@ -31,7 +30,6 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-fon
   grid-template-columns:1fr 2fr;
   gap:20px;
   justify-content:center;
-  overflow-x:auto; /* permite scroll horizontal quando janela é menor */
 }
 
 /* Cards, controles e KPIs */
@@ -53,14 +51,13 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-fon
 .kpi .small{margin-bottom:8px;}
 
 /* ===================== */
-/* SCROLL E TABELAS FLUIDAS */
+/* SCROLL TABELAS FLUIDAS */
 /* ===================== */
 .table-wrap {
   border-radius: 10px;
   border: 1px solid var(--glass);
   background: var(--panel);
   padding: 0;
-  overflow-x:auto;
 }
 
 .table-scroll {
@@ -69,15 +66,12 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-fon
   overflow-x: auto;
   display: block;
   border-radius: 0 0 10px 10px;
-  min-width:100%;
 }
 
 table {
-  width:100%;
-  min-width:600px; /* garante scroll horizontal em telas menores */
+  width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  position: relative;
 }
 
 thead th {
@@ -97,7 +91,7 @@ tbody td {
 
 td:first-child,th:first-child{text-align:left;}
 tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
-.chart-area{height:400px;margin-top:12px;width:100%;overflow-x:auto;}
+.chart-area{height:400px;margin-top:12px;width:100%;}
 .chart-area canvas{width:100% !important;height:auto !important;}
 
 /* Comparativo lado a lado */
@@ -105,8 +99,6 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:20px;
-  overflow-x:auto;
-  min-width:100%;
 }
 
 /* Theme toggle */
@@ -115,32 +107,26 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 /* Footer */
 .footer{margin-top:12px;color:var(--muted);font-size:13px;}
 
-/* Títulos das tabelas */
+/* Tabelas específicas */
 #titleA {background-color:#c9a84b;color:#0b0b0b;padding:10px 15px;border-radius:12px 12px 0 0;font-weight:800;text-align:center;font-size:16px;box-shadow:0 3px 6px rgba(0,0,0,0.2);margin-bottom:0;}
 #titleB {background-color:#2b6cb0;color:#ffffff;padding:10px 15px;border-radius:12px 12px 0 0;font-weight:800;text-align:center;font-size:16px;box-shadow:0 3px 6px rgba(0,0,0,0.2);margin-bottom:0;}
 
-/* BORDAS E FUNDO DAS TABELAS */
 #tableA {border:2px solid #c9a84b;border-radius:0 0 12px 12px;background-color: rgba(201,168,75,0.07);box-shadow: inset 0 0 8px rgba(201,168,75,0.15);transition: all 0.2s;}
 #tableB {border:2px solid #2b6cb0;border-radius:0 0 12px 12px;background-color: rgba(43,108,176,0.07);box-shadow: inset 0 0 8px rgba(43,108,176,0.15);transition: all 0.2s;}
 
-/* CABEÇALHOS */
 #tableA thead th {background-color:#f5f0d6;color:#0b0b0b;font-weight:700;text-transform:uppercase;z-index:3;}
 #tableB thead th {background-color:#cfe0f4;color:#0b1220;font-weight:700;text-transform:uppercase;z-index:3;}
 
-/* LINHAS */
 #tableA tbody tr:nth-child(odd){background-color: rgba(201,168,75,0.08);}
 #tableB tbody tr:nth-child(odd){background-color: rgba(43,108,176,0.08);}
 #tableA tbody tr:hover,#tableB tbody tr:hover{background-color: rgba(255,255,255,0.1);transform: scale(1.01);transition: all 0.15s;}
 
-/* CÉLULAS */
 #tableA tbody td,#tableB tbody td{padding:10px 8px;text-align:right;transition:all 0.15s;}
 #tableA tbody td:first-child,#tableB tbody td:first-child{text-align:left;font-weight:600;}
-
-/* RODAPÉ */
 #tableA tbody tr:last-child td,#tableB tbody tr:last-child td{border-bottom:none;}
 
 /* Totais comparativos */
-.totals-comparison{display:grid;grid-template-columns:1fr 1fr;gap:20px;overflow-x:auto;}
+.totals-comparison{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
 .totals-card{padding:15px 20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.2);}
 .totals-card h4{margin-bottom:10px;font-weight:700;text-transform:uppercase;font-size:14px;}
 .totals-card.gold{border-left:4px solid #c9a84b;background-color: rgba(201, 168, 75, 0.08);}
@@ -150,7 +136,7 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 .totals-grid span{font-size:13px;color:var(--muted);}
 .totals-grid strong{font-size:15px;font-weight:700;color:var(--accent);}
 
-/* MEDIA QUERIES RESPONSIVAS */
+/* MEDIA QUERIES */
 @media(max-width:1100px){.container{grid-template-columns:1fr;padding:10px;}}
 @media(max-width:900px){.comparison,.totals-comparison{grid-template-columns:1fr;}}
 @media(max-width:600px){
