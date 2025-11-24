@@ -19,46 +19,52 @@
 }
 
 *{box-sizing:border-box;font-family:Inter,system-ui,Arial;color:var(--accent);margin:0;padding:0;}
-html,body{height:100%;width:100%;background:var(--bg);font-size:16px;-webkit-font-smoothing:antialiased;}
+html,body{height:100%;width:100%;background:var(--bg);font-size:1rem;-webkit-font-smoothing:antialiased;}
 
-/* --- Container e cards --- */
+/* --- Container expansível --- */
 .container{
   width:95%;
-  max-width:1600px;
+  max-width:100%;
   margin:20px auto;
   display:grid;
   grid-template-columns:1fr 2fr;
-  gap:20px;
+  gap:2vw;
   justify-content:center;
 }
 
-/* Cards e KPIs */
-.card{background:var(--card);padding:20px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.2);border:1px solid var(--glass);}
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
-.brand{font-weight:800;color:var(--gold);font-size:22px;letter-spacing:1px;}
-.small{font-size:13px;color:var(--muted);}
-.controls label{display:block;font-size:13px;color:var(--muted);margin-top:12px;font-weight:500;}
+/* Cards e KPIs escaláveis */
+.card{
+  background:var(--card);
+  padding:1.5rem;
+  border-radius:12px;
+  box-shadow:0 6px 20px rgba(0,0,0,0.2);
+  border:1px solid var(--glass);
+}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+.brand{font-weight:800;color:var(--gold);font-size:1.3rem;letter-spacing:1px;}
+.small{font-size:0.85rem;color:var(--muted);}
+.controls label{display:block;font-size:0.85rem;color:var(--muted);margin-top:0.75rem;font-weight:500;}
 .controls input[type=text],.controls input[type=number],.controls select{
-  background:var(--panel);color:var(--accent);border:1px solid var(--glass);padding:12px 10px;border-radius:10px;width:100%;margin-top:6px;transition:all 0.2s;
+  background:var(--panel);color:var(--accent);border:1px solid var(--glass);
+  padding:0.8rem 0.6rem;border-radius:10px;width:100%;margin-top:0.4rem;transition:all 0.2s;
 }
 .controls input:focus,.controls select:focus{border-color:var(--gold);outline:none;box-shadow:0 0 8px var(--gold);}
-.button{background:var(--gold);color:#0b0b0b;border:none;padding:12px 18px;border-radius:10px;cursor:pointer;font-weight:700;transition:all 0.2s;}
+.button{background:var(--gold);color:#0b0b0b;border:none;padding:0.8rem 1.2rem;border-radius:10px;cursor:pointer;font-weight:700;transition:all 0.2s;}
 .button:hover{background:#e0a800;}
 .button.ghost{background:transparent;border:1px solid var(--glass);color:var(--accent);}
 .button.ghost:hover{background:var(--glass);}
-.kpis{display:flex;gap:15px;flex-wrap:wrap;margin-top:12px;}
-.kpi{background:var(--panel);padding:15px;border-radius:10px;min-width:180px;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,0.15);}
-.kpi .small{margin-bottom:8px;}
+.kpis{display:flex;gap:1.2rem;flex-wrap:wrap;margin-top:0.75rem;}
+.kpi{background:var(--panel);padding:1rem;border-radius:10px;min-width:180px;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,0.15);}
+.kpi .small{margin-bottom:0.5rem;}
 
-/* --- Tabela responsiva e expansível --- */
+/* --- Tabela expansível --- */
 .table-wrap{
   border-radius:10px;
   border:1px solid var(--glass);
   background:var(--panel);
-  padding:0;
   width:100%;
+  padding:0;
 }
-
 .table-scroll{
   max-height:520px;
   overflow-y:auto;
@@ -67,86 +73,74 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:16px;-webkit-fon
   border-radius:0 0 10px 10px;
   position:relative;
 }
-
 table{
   width:100%;
   border-collapse:collapse;
-  font-size:14px;
-  table-layout: auto; /* Colunas flexíveis */
+  font-size:0.9rem;
+  table-layout: auto;
 }
-
 thead th{
   position:sticky;
   top:0;
   z-index:2;
   background:inherit;
-  padding:8px;
+  padding:0.5rem;
   text-align:right;
   white-space:nowrap;
 }
-
 tbody td{
-  padding:8px;
+  padding:0.5rem;
   text-align:right;
   border-bottom:1px dashed rgba(255,255,255,0.05);
   word-break:break-word;
 }
-
 td:first-child,th:first-child{text-align:left;}
 tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
-.chart-area{height:400px;margin-top:12px;width:100%;}
-.chart-area canvas{width:100% !important;height:auto !important;}
 
 /* Comparativo lado a lado */
 .comparison{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-  gap:20px;
+  grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:1.5vw;
 }
 
 /* Títulos das tabelas */
-#titleA{background-color:#c9a84b;color:#0b0b0b;padding:10px 15px;border-radius:12px 12px 0 0;font-weight:800;text-align:center;font-size:16px;box-shadow:0 3px 6px rgba(0,0,0,0.2);margin-bottom:0;}
-#titleB{background-color:#2b6cb0;color:#ffffff;padding:10px 15px;border-radius:12px 12px 0 0;font-weight:800;text-align:center;font-size:16px;box-shadow:0 3px 6px rgba(0,0,0,0.2);margin-bottom:0;}
+#titleA{background-color:#c9a84b;color:#0b0b0b;padding:0.6rem 1rem;border-radius:12px 12px 0 0;font-weight:800;text-align:center;font-size:1rem;box-shadow:0 3px 6px rgba(0,0,0,0.2);margin-bottom:0;}
+#titleB{background-color:#2b6cb0;color:#ffffff;padding:0.6rem 1rem;border-radius:12px 12px 0 0;font-weight:800;text-align:center;font-size:1rem;box-shadow:0 3px 6px rgba(0,0,0,0.2);margin-bottom:0;}
 
-/* BORDAS E FUNDO DAS TABELAS */
+/* Bordas e fundos */
 #tableA{border:2px solid #c9a84b;border-radius:0 0 12px 12px;background-color:rgba(201,168,75,0.07);box-shadow:inset 0 0 8px rgba(201,168,75,0.15);transition:all 0.2s;}
 #tableB{border:2px solid #2b6cb0;border-radius:0 0 12px 12px;background-color:rgba(43,108,176,0.07);box-shadow:inset 0 0 8px rgba(43,108,176,0.15);transition:all 0.2s;}
-
-/* CABEÇALHOS */
 #tableA thead th{background-color:#f5f0d6;color:#0b0b0b;font-weight:700;text-transform:uppercase;z-index:3;}
 #tableB thead th{background-color:#cfe0f4;color:#0b1220;font-weight:700;text-transform:uppercase;z-index:3;}
-
-/* LINHAS */
 #tableA tbody tr:nth-child(odd){background-color:rgba(201,168,75,0.08);}
 #tableB tbody tr:nth-child(odd){background-color:rgba(43,108,176,0.08);}
 #tableA tbody tr:hover,#tableB tbody tr:hover{background-color:rgba(255,255,255,0.1);transform:scale(1.01);transition:all 0.15s;}
-
-/* CÉLULAS */
-#tableA tbody td,#tableB tbody td{padding:10px 8px;text-align:right;transition:all 0.15s;}
+#tableA tbody td,#tableB tbody td{padding:0.6rem 0.5rem;text-align:right;transition:all 0.15s;}
 #tableA tbody td:first-child,#tableB tbody td:first-child{text-align:left;font-weight:600;}
 
 /* Totais comparativos */
-.totals-comparison{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;}
-.totals-card{padding:15px 20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.2);}
-.totals-card h4{margin-bottom:10px;font-weight:700;text-transform:uppercase;font-size:14px;}
+.totals-comparison{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5vw;}
+.totals-card{padding:1rem 1.2rem;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.2);}
+.totals-card h4{margin-bottom:0.6rem;font-weight:700;text-transform:uppercase;font-size:0.9rem;}
 .totals-card.gold{border-left:4px solid #c9a84b;background-color: rgba(201, 168, 75, 0.08);}
 .totals-card.blue{border-left:4px solid #2b6cb0;background-color: rgba(43, 108, 176, 0.08);}
-.totals-grid{display:flex;flex-direction:column;gap:6px;}
+.totals-grid{display:flex;flex-direction:column;gap:0.4rem;}
 .totals-grid div{display:flex;justify-content:space-between;align-items:center;}
-.totals-grid span{font-size:13px;color:var(--muted);}
-.totals-grid strong{font-size:15px;font-weight:700;color:var(--accent);}
+.totals-grid span{font-size:0.8rem;color:var(--muted);}
+.totals-grid strong{font-size:0.95rem;font-weight:700;color:var(--accent);}
 
-/* MEDIA QUERIES RESPONSIVAS */
-@media(max-width:1100px){.container{grid-template-columns:1fr;padding:15px;}}
+/* MEDIA QUERIES */
+@media(max-width:1100px){.container{grid-template-columns:1fr;padding:1rem;}}
 @media(max-width:900px){.comparison,.totals-comparison{grid-template-columns:1fr;}}
 @media(max-width:600px){
-  table th, table td{padding:6px 4px;font-size:12px;}
-  .button{padding:10px;font-size:13px;}
+  table th, table td{padding:0.4rem 0.3rem;font-size:0.8rem;}
+  .button{padding:0.6rem;font-size:0.85rem;}
 }
 @media(max-width:500px){
-  html,body{font-size:13px;}
-  .small{font-size:11px;}
-  .totals-comparison{gap:10px;}
+  html,body{font-size:0.85rem;}
+  .small{font-size:0.7rem;}
+  .totals-comparison{gap:0.8rem;}
 }
 
 /* IMPRESSÃO */
