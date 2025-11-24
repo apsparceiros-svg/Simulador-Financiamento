@@ -26,7 +26,7 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-fon
   margin:20px auto;
   padding:20px;
   display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(0,2fr); /* FLEXÍVEL PARA NÃO CORTAR */
+  grid-template-columns:minmax(0,1fr) minmax(0,2fr);
   gap:20px;
   justify-content:center;
   width:100%;
@@ -51,55 +51,48 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-fon
 .kpi .small{margin-bottom:8px;}
 
 /* ===================== */
-/* CORREÇÃO DO SCROLL    */
+/* TABELAS SEM CORTE HORIZONTAL */
 /* ===================== */
 .table-wrap {
-  border-radius: 10px;
-  border: 1px solid var(--glass);
+  border-radius: 12px;
+  border: 2px solid var(--glass);
   background: var(--panel);
-  padding: 0;
-  overflow-x:auto; /* garante scroll horizontal */
+  padding: 10px;
+  overflow-x: visible; /* remove scroll horizontal */
+  width: 100%;
 }
 
 .table-scroll {
-  max-height: 520px;
-  overflow-y: auto;
+  max-height: none; /* todas as linhas visíveis */
+  overflow-y: visible;
   display: block;
-  border-radius: 0 0 10px 10px;
+  border-radius: 0 0 12px 12px;
   position: relative;
 }
 
 table {
-  width: 100%;
+  width: 100%;   /* ocupa toda largura do container */
+  min-width: 0;  /* remove limite mínimo */
   border-collapse: collapse;
-  font-size: 13px;
-  position: relative;
+  font-size: 14px;
 }
 
-thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: inherit;
-  padding: 8px;
-  text-align: right;
+thead th, tbody td {
+  padding: 12px 8px;
+  word-wrap: break-word; /* quebra texto longo */
+  white-space: normal;   /* evita overflow horizontal */
 }
 
-tbody td {
-  padding: 8px;
-  text-align: right;
-  border-bottom: 1px dashed rgba(255,255,255,0.05);
-}
-
-td:first-child,th:first-child{text-align:left;}
-tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
+td:first-child, th:first-child {text-align:left;}
+tbody tr:nth-child(even) {background: rgba(255,255,255,0.03);}
+tbody tr:hover {background-color: rgba(255,255,255,0.12);transform: scale(1.01);transition: all 0.15s;}
 .chart-area{height:400px;margin-top:12px;width:100%;}
 .chart-area canvas{width:100% !important;height:auto !important;}
 
 /* Comparativo lado a lado */
 .comparison{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); /* empilha em janelas pequenas */
+  grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
   gap:20px;
   width:100%;
   overflow-x:auto;
@@ -154,21 +147,8 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 }
 
 /* CABEÇALHOS */
-#tableA thead th {
-  background-color: #f5f0d6;
-  color: #0b0b0b;
-  font-weight: 700;
-  text-transform: uppercase;
-  z-index: 3;
-}
-
-#tableB thead th {
-  background-color: #cfe0f4;
-  color: #0b1220;
-  font-weight: 700;
-  text-transform: uppercase;
-  z-index: 3;
-}
+#tableA thead th {background-color: #f5f0d6;color: #0b0b0b;font-weight: 700;text-transform: uppercase;z-index: 3;}
+#tableB thead th {background-color: #cfe0f4;color: #0b1220;font-weight: 700;text-transform: uppercase;z-index: 3;}
 
 /* LINHAS */
 #tableA tbody tr:nth-child(odd) {background-color: rgba(201, 168, 75, 0.08);}
@@ -176,7 +156,7 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 #tableA tbody tr:hover, #tableB tbody tr:hover {background-color: rgba(255,255,255,0.1);transform: scale(1.01);transition: all 0.15s;}
 
 /* CÉLULAS */
-#tableA tbody td, #tableB tbody td {padding: 10px 8px;text-align:right;transition:all 0.15s;}
+#tableA tbody td, #tableB tbody td {padding: 12px 8px;text-align:right;transition:all 0.15s;}
 #tableA tbody td:first-child, #tableB tbody td:first-child{text-align:left;font-weight:600;}
 
 /* RODAPÉ */
@@ -198,7 +178,7 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 @media(max-width:900px){.comparison,.totals-comparison{grid-template-columns:1fr;}}
 @media(max-width:600px){
   .container{gap:10px;padding:8px;}
-  table th, table td{padding:6px 4px;font-size:12px;}
+  table th, table td{padding:8px 6px;font-size:13px;}
   .button{padding:10px;font-size:13px;}
 }
 @media(max-width:500px){
