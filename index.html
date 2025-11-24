@@ -654,90 +654,206 @@ function generateBankSchedule(opts){
     }
   }
 
-// === BLOCO DE DESCONTO ROBUSTO
-if (discountPct > 0 && discountCount > 0) {
-  const amortRows = schedule.filter(s => s.payment > 0);
-  const L = amortRows.length;
-  if (L > 0) {
-    // aplicar desconto nas últimas discountCount parcelas
-    const affectedRows = [];
-    for (let j = 0; j < discountCount; j++) {
-      const idxInAmort = L - 1 - j;
-      if (idxInAmort < 0) break;
-      const row = amortRows[idxInAmort];
-      const globalIdx = schedule.findIndex(s => Math.floor(s.month) === Math.floor(row.month));
-      if (globalIdx < 0) continue;
+  // === BLOCO DE DESCONTO (aplica desconto somente sobre JUROS nas últimas discountCount parcelas pagas)
+  if (discountPct > 0 && discountCount > 0) {
+    // encontrar linhas com pagamento (exclui carência sem pagamento)
+    const amortRows = schedule.filter(s => s.payment > 0);
+    const L = amortRows.length;
+    if (L > 0) {
+      const affectedIndexes = []; // índices globais em schedule
 
-      const originalInterest = Number(schedule[globalIdx].interest);
-      const originalAmort = Number(schedule[globalIdx].amortization);
+      // aplica desconto nas últimas discountCount parcelas (do fim para início)
+      for (let j = 0; j < discountCount; j++) {
+        const idxInAmort = L - 1 - j;
+        if (idxInAmort < 0) break;
+        const row = amortRows[idxInAmort];
+        // encontrar índice global exato (compare month)
+        const globalIdx = schedule.findIndex(s => Math.floor(s.month) === Math.floor(row.month));
+        if (globalIdx < 0) continue;
 
-      const discountAmount = originalInterest * (discountPct / 100);
-      const newInterest = originalInterest - discountAmount;
-      const newPayment = newInterest + originalAmort;
+        // valores originais (já arredondados na schedule), porém trataremos como raw aproximado:
+        const originalInterest = Number(schedule[globalIdx].interest);
+        const originalAmort = Number(schedule[globalIdx].amortization);
 
-      schedule[globalIdx].discount = roundBank(discountAmount);
-      schedule[globalIdx].interest = roundBank(newInterest);
-      schedule[globalIdx].amortization = roundBank(originalAmort);
-      schedule[globalIdx].payment = roundBank(newPayment);
+        // desconto só sobre juros (valor monetário)
+        const discountAmount = originalInterest * (discountPct / 100);
+        const newInterest = originalInterest - discountAmount;
+        const newAmort = originalAmort; // amortização não muda
+        const newPayment = newInterest + newAmort;
 
-      // recalcular saldo final
-      let newEnd = roundBank(schedule[globalIdx].balanceStart - originalAmort);
-      if (system === 'sacre') {
-        const mth = Math.floor(schedule[globalIdx].month);
-        const factor = indexMap[mth] || (1 + reajPct / 100);
-        newEnd = roundBank(newEnd * factor);
-      }
-      schedule[globalIdx].end = newEnd;
-      affectedRows.push(globalIdx);
-    }
+        // atualiza a parcela afetada (os valores armazenados na schedule são arredondados)
+        schedule[globalIdx].discount = roundBank(discountAmount);
+        schedule[globalIdx].payment = roundBank(newPayment);
+        schedule[globalIdx].interest = roundBank(newInterest);
+        schedule[globalIdx].amortization = roundBank(newAmort);
 
-    // repropagar parcelas após o primeiro desconto, mantendo amortização e juros consistentes
-    if (affectedRows.length > 0) {
-      const firstIdx = Math.min(...affectedRows);
-      let curBalance = Number(schedule[firstIdx].end);
-
-      for (let t = firstIdx + 1; t < schedule.length; t++) {
-        schedule[t].balanceStart = roundBank(curBalance);
-        if (schedule[t].payment > 0) {
-          const origAmort = Number(schedule[t].amortization);
-          let newInterest = Number(schedule[t].interest);
-
-          // recalcula interest baseado no saldo atual para SAC, SACRE, compostos
-          if (system === 'sac' || system === 'sacre') {
-            newInterest = curBalance * i;
-          } else if (system === 'compostos') {
-            newInterest = curBalance * i;
-          } else if (system === 'simples') {
-            newInterest = (schedule[t].balanceStart + origAmort) * i; // simples sobre saldo anterior
-          } else if (system === 'price') {
-            // mantemos payment constante para Price, recalculando juros = curBalance * i
-            newInterest = curBalance * i;
-          }
-
-          const newPayment = newInterest + origAmort;
-          let newEnd = curBalance - origAmort;
-          if (system === 'sacre') {
-            const mth = Math.floor(schedule[t].month);
-            const factor = indexMap[mth] || (1 + reajPct / 100);
-            newEnd = roundBank(newEnd * factor);
-          }
-
-          schedule[t].interest = roundBank(newInterest);
-          schedule[t].payment = roundBank(newPayment);
-          schedule[t].amortization = roundBank(origAmort);
-          schedule[t].end = newEnd;
-          curBalance = newEnd;
-        } else {
-          // parcelas sem pagamento (carência)
-          schedule[t].interest = roundBank(curBalance * i);
-          schedule[t].amortization = 0;
-          schedule[t].payment = 0;
-          schedule[t].end = roundBank(curBalance);
+        // recompute end (leva em conta SACRE se aplicável)
+        let recomputedEnd = roundBank(Number(schedule[globalIdx].balanceStart) - newAmort);
+        if (system === 'sacre') {
+          const mth = Math.floor(schedule[globalIdx].month);
+          const factor = indexMap[mth] || (1 + reajPct / 100);
+          recomputedEnd = roundBank(recomputedEnd * factor);
         }
+        schedule[globalIdx].end = recomputedEnd;
+
+        affectedIndexes.push(globalIdx);
       }
-    }
-  }
-}
+
+      // se houve alterações, re-gerar as parcelas seguintes a partir do menor índice afetado
+      if (affectedIndexes.length > 0) {
+        const firstAffectedIdx = Math.min(...affectedIndexes);
+
+        // curBalance: saldo após a parcela firstAffectedIdx (já arredondado)
+        let curBalance = Number(schedule[firstAffectedIdx].end);
+
+        // slice das linhas após firstAffectedIdx
+        const followingRows = schedule.slice(firstAffectedIdx + 1);
+        const remainingPaymentCount = followingRows.filter(r => r.payment > 0).length;
+
+        // regenerar conforme sistema
+        if (system === 'compostos') {
+          // repropaga juros compostos até o fim
+          for (let t = firstAffectedIdx + 1; t < schedule.length; t++) {
+            const m = schedule[t].month;
+            const balStart = curBalance;
+            const interest = balStart * i;
+            curBalance = balStart + interest;
+            const payment = (t === schedule.length - 1) ? curBalance : 0;
+            schedule[t].balanceStart = roundBank(balStart);
+            schedule[t].interest = roundBank(interest);
+            schedule[t].amortization = 0;
+            schedule[t].payment = roundBank(payment);
+            schedule[t].end = roundBank(curBalance);
+          }
+
+        } else if (system === 'price') {
+          // número de pagamentos remanescentes
+          const Mrem = Math.max(1, remainingPaymentCount);
+          const ann = i;
+
+          // recalcula prestação nivelada a partir de curBalance
+          let newPaymentConst = (ann === 0) ? (curBalance / Mrem) : (curBalance * ann / (1 - Math.pow(1 + ann, -Mrem)));
+
+          // vamos construir um array de pagamentos remanescentes em alta precisão (raw),
+          // garantindo que a soma das amortizações zere o saldo (última parcela ajusta centavos).
+          const paymentsArr = [];
+          let runningBalance = curBalance;
+          for (let p = 0; p < Mrem; p++) {
+            const interestRaw = runningBalance * ann;
+            const isLast = (p === Mrem - 1);
+            // último pagamento leva o que sobra para fechar saldo
+            let paymentRaw = isLast ? (runningBalance + interestRaw) : newPaymentConst;
+            if (paymentRaw < interestRaw) paymentRaw = interestRaw;
+            const amortRaw = paymentRaw - interestRaw;
+            paymentsArr.push({ interestRaw, amortRaw, paymentRaw });
+            runningBalance = runningBalance - amortRaw;
+          }
+
+          // small correction: distribuir diferença de centavos no último paymentRaw para forçar runningBalance ~ 0
+          // Note: schedule stores rounded values. Ajuste final será refletido no último pagamento.
+          // agora aplicamos paymentsArr nas linhas correspondentes (pulando linhas sem pagamento)
+          let payIdx = 0;
+          let prevBalance = curBalance;
+          for (let t = firstAffectedIdx + 1; t < schedule.length; t++) {
+            schedule[t].balanceStart = roundBank(prevBalance);
+            if (schedule[t].payment > 0) {
+              const pObj = paymentsArr[payIdx++];
+              const interest = pObj.interestRaw;
+              // para a última parcela, forçamos o pagamento a ser prevBalance + interest (garante saldo zero)
+              const isLastAssigned = (payIdx === Mrem);
+              let payment = isLastAssigned ? (prevBalance + interest) : pObj.paymentRaw;
+              if (payment < interest) payment = interest;
+              const amort = payment - interest;
+              const end = prevBalance - amort;
+
+              schedule[t].interest = roundBank(interest);
+              schedule[t].amortization = roundBank(amort);
+              schedule[t].payment = roundBank(payment);
+              // aplica SACRE factor se necessário para o saldo final
+              if (system === 'sacre') {
+                const m = schedule[t].month;
+                const factor = indexMap[m] || (1 + reajPct / 100);
+                schedule[t].end = roundBank(end * factor);
+                prevBalance = Number(schedule[t].end);
+              } else {
+                schedule[t].end = roundBank(end);
+                prevBalance = end;
+              }
+            } else {
+              // parcela sem pagamento (carência)
+              schedule[t].interest = roundBank(prevBalance * i);
+              schedule[t].amortization = 0;
+              schedule[t].payment = 0;
+              schedule[t].end = roundBank(prevBalance);
+            }
+          }
+
+        } else if (system === 'sac' || system === 'sacre') {
+          const Mrem = Math.max(1, remainingPaymentCount);
+          let amortConst = (Mrem > 0) ? (curBalance / Mrem) : 0;
+          let prevBalance = curBalance;
+          for (let t = firstAffectedIdx + 1; t < schedule.length; t++) {
+            schedule[t].balanceStart = roundBank(prevBalance);
+            schedule[t].interest = roundBank(prevBalance * i);
+            if (schedule[t].payment > 0) {
+              schedule[t].amortization = roundBank(amortConst);
+              schedule[t].payment = roundBank(schedule[t].interest + schedule[t].amortization);
+              let end = prevBalance - amortConst;
+              if (system === 'sacre') {
+                const m = schedule[t].month;
+                const factor = indexMap[m] || (1 + reajPct / 100);
+                end = end * factor;
+              }
+              schedule[t].end = roundBank(end);
+              prevBalance = (system === 'sacre') ? Number(schedule[t].end) : end;
+            } else {
+              schedule[t].amortization = 0;
+              schedule[t].end = roundBank(prevBalance);
+            }
+          }
+
+        } else if (system === 'simples') {
+          // manter juros calculados sobre 'financed' original, mas dividir saldo atual em Mrem amortizações
+          const Mrem = Math.max(1, remainingPaymentCount);
+          const amortConst = (Mrem > 0) ? (curBalance / Mrem) : 0;
+          let prevBalance = curBalance;
+          for (let t = firstAffectedIdx + 1; t < schedule.length; t++) {
+            schedule[t].balanceStart = roundBank(prevBalance);
+            schedule[t].interest = roundBank(financed * i); // juros simples sobre financiado original
+            if (schedule[t].payment > 0) {
+              schedule[t].amortization = roundBank(amortConst);
+              schedule[t].payment = roundBank(schedule[t].interest + schedule[t].amortization);
+              schedule[t].end = roundBank(prevBalance - amortConst);
+              prevBalance = schedule[t].end;
+            } else {
+              schedule[t].amortization = 0;
+              schedule[t].end = roundBank(prevBalance);
+            }
+          }
+
+        } else {
+          // fallback seguro: repropaga conforme pagamento atual
+          let prevBalance = curBalance;
+          for (let t = firstAffectedIdx + 1; t < schedule.length; t++) {
+            schedule[t].balanceStart = roundBank(prevBalance);
+            schedule[t].interest = roundBank(prevBalance * i);
+            if (schedule[t].payment > 0) {
+              let amort = roundBank(schedule[t].payment - schedule[t].interest);
+              if (amort < 0) {
+                amort = 0;
+                schedule[t].payment = roundBank(schedule[t].interest);
+              }
+              schedule[t].amortization = roundBank(amort);
+              schedule[t].end = roundBank(prevBalance - amort);
+              prevBalance = schedule[t].end;
+            } else {
+              schedule[t].end = roundBank(prevBalance);
+            }
+          }
+        }
+      } // end if affectedIndexes.length > 0
+    } // end if L>0
+  } // end desconto block
 
   // --- QUITAÇÃO REAL: se settleMonth fornecido, calcula PV e insere linha de quitação
   if (settleMonth && settleMonth > 0) {
