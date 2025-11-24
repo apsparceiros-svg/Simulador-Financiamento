@@ -21,11 +21,11 @@
 *{box-sizing:border-box;font-family:Inter,system-ui,Arial;color:var(--accent);margin:0;padding:0;}
 html,body{height:100%;width:100%;background:var(--bg);font-size:1rem;-webkit-font-smoothing:antialiased;}
 
-/* --- Container expansível --- */
+/* --- Container full-screen --- */
 .container{
-  width:95%;
-  max-width:100%;
-  margin:20px auto;
+  width:95vw;
+  max-width:98vw;
+  margin:2vh auto;
   display:grid;
   grid-template-columns:1fr 2fr;
   gap:2vw;
@@ -41,7 +41,7 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:1rem;-webkit-fon
   border:1px solid var(--glass);
 }
 .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
-.brand{font-weight:800;color:var(--gold);font-size:1.3rem;letter-spacing:1px;}
+.brand{font-weight:800;color:var(--gold);font-size:1.5rem;letter-spacing:1px;}
 .small{font-size:0.85rem;color:var(--muted);}
 .controls label{display:block;font-size:0.85rem;color:var(--muted);margin-top:0.75rem;font-weight:500;}
 .controls input[type=text],.controls input[type=number],.controls select{
@@ -54,10 +54,10 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:1rem;-webkit-fon
 .button.ghost{background:transparent;border:1px solid var(--glass);color:var(--accent);}
 .button.ghost:hover{background:var(--glass);}
 .kpis{display:flex;gap:1.2rem;flex-wrap:wrap;margin-top:0.75rem;}
-.kpi{background:var(--panel);padding:1rem;border-radius:10px;min-width:180px;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,0.15);}
+.kpi{background:var(--panel);padding:1rem;border-radius:10px;min-width:200px;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,0.15);}
 .kpi .small{margin-bottom:0.5rem;}
 
-/* --- Tabela expansível --- */
+/* --- Tabela full-screen responsiva --- */
 .table-wrap{
   border-radius:10px;
   border:1px solid var(--glass);
@@ -66,7 +66,7 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:1rem;-webkit-fon
   padding:0;
 }
 .table-scroll{
-  max-height:520px;
+  max-height:70vh;
   overflow-y:auto;
   overflow-x:hidden;
   display:block;
@@ -76,20 +76,20 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:1rem;-webkit-fon
 table{
   width:100%;
   border-collapse:collapse;
-  font-size:0.9rem;
-  table-layout: auto;
+  font-size:0.95rem;
+  table-layout:auto;
 }
 thead th{
   position:sticky;
   top:0;
   z-index:2;
   background:inherit;
-  padding:0.5rem;
+  padding:0.6rem;
   text-align:right;
   white-space:nowrap;
 }
 tbody td{
-  padding:0.5rem;
+  padding:0.6rem;
   text-align:right;
   border-bottom:1px dashed rgba(255,255,255,0.05);
   word-break:break-word;
@@ -97,16 +97,16 @@ tbody td{
 td:first-child,th:first-child{text-align:left;}
 tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 
-/* Comparativo lado a lado */
+/* Comparativo lado a lado adaptável */
 .comparison{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
-  gap:1.5vw;
+  grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+  gap:2vw;
 }
 
 /* Títulos das tabelas */
-#titleA{background-color:#c9a84b;color:#0b0b0b;padding:0.6rem 1rem;border-radius:12px 12px 0 0;font-weight:800;text-align:center;font-size:1rem;box-shadow:0 3px 6px rgba(0,0,0,0.2);margin-bottom:0;}
-#titleB{background-color:#2b6cb0;color:#ffffff;padding:0.6rem 1rem;border-radius:12px 12px 0 0;font-weight:800;text-align:center;font-size:1rem;box-shadow:0 3px 6px rgba(0,0,0,0.2);margin-bottom:0;}
+#titleA{background-color:#c9a84b;color:#0b0b0b;padding:0.7rem 1rem;border-radius:12px 12px 0 0;font-weight:800;text-align:center;font-size:1.1rem;box-shadow:0 3px 6px rgba(0,0,0,0.2);margin-bottom:0;}
+#titleB{background-color:#2b6cb0;color:#ffffff;padding:0.7rem 1rem;border-radius:12px 12px 0 0;font-weight:800;text-align:center;font-size:1.1rem;box-shadow:0 3px 6px rgba(0,0,0,0.2);margin-bottom:0;}
 
 /* Bordas e fundos */
 #tableA{border:2px solid #c9a84b;border-radius:0 0 12px 12px;background-color:rgba(201,168,75,0.07);box-shadow:inset 0 0 8px rgba(201,168,75,0.15);transition:all 0.2s;}
@@ -116,31 +116,31 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 #tableA tbody tr:nth-child(odd){background-color:rgba(201,168,75,0.08);}
 #tableB tbody tr:nth-child(odd){background-color:rgba(43,108,176,0.08);}
 #tableA tbody tr:hover,#tableB tbody tr:hover{background-color:rgba(255,255,255,0.1);transform:scale(1.01);transition:all 0.15s;}
-#tableA tbody td,#tableB tbody td{padding:0.6rem 0.5rem;text-align:right;transition:all 0.15s;}
+#tableA tbody td,#tableB tbody td{padding:0.65rem 0.55rem;text-align:right;transition:all 0.15s;}
 #tableA tbody td:first-child,#tableB tbody td:first-child{text-align:left;font-weight:600;}
 
-/* Totais comparativos */
-.totals-comparison{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5vw;}
+/* Totais comparativos full-screen */
+.totals-comparison{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2vw;}
 .totals-card{padding:1rem 1.2rem;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.2);}
-.totals-card h4{margin-bottom:0.6rem;font-weight:700;text-transform:uppercase;font-size:0.9rem;}
+.totals-card h4{margin-bottom:0.6rem;font-weight:700;text-transform:uppercase;font-size:1rem;}
 .totals-card.gold{border-left:4px solid #c9a84b;background-color: rgba(201, 168, 75, 0.08);}
 .totals-card.blue{border-left:4px solid #2b6cb0;background-color: rgba(43, 108, 176, 0.08);}
-.totals-grid{display:flex;flex-direction:column;gap:0.4rem;}
+.totals-grid{display:flex;flex-direction:column;gap:0.5rem;}
 .totals-grid div{display:flex;justify-content:space-between;align-items:center;}
-.totals-grid span{font-size:0.8rem;color:var(--muted);}
-.totals-grid strong{font-size:0.95rem;font-weight:700;color:var(--accent);}
+.totals-grid span{font-size:0.85rem;color:var(--muted);}
+.totals-grid strong{font-size:1rem;font-weight:700;color:var(--accent);}
 
-/* MEDIA QUERIES */
-@media(max-width:1100px){.container{grid-template-columns:1fr;padding:1rem;}}
+/* MEDIA QUERIES ultra responsivas */
+@media(max-width:1200px){.container{grid-template-columns:1fr;padding:1rem;}}
 @media(max-width:900px){.comparison,.totals-comparison{grid-template-columns:1fr;}}
-@media(max-width:600px){
-  table th, table td{padding:0.4rem 0.3rem;font-size:0.8rem;}
+@media(max-width:700px){
+  table th, table td{padding:0.5rem 0.4rem;font-size:0.85rem;}
   .button{padding:0.6rem;font-size:0.85rem;}
 }
 @media(max-width:500px){
   html,body{font-size:0.85rem;}
   .small{font-size:0.7rem;}
-  .totals-comparison{gap:0.8rem;}
+  .totals-comparison{gap:1rem;}
 }
 
 /* IMPRESSÃO */
