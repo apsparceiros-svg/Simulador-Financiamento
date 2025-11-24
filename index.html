@@ -17,6 +17,7 @@
 :root.light{
   --bg:#f0f4f8; --panel:#ffffff; --muted:#555; --gold:#2b6cb0; --card:#ffffff; --accent:#0b1220; --glass:rgba(11,18,32,0.05);
 }
+
 *{box-sizing:border-box;font-family:Inter,system-ui,Arial;color:var(--accent);margin:0;padding:0;}
 html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-font-smoothing:antialiased;}
 
@@ -50,13 +51,14 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-fon
 .kpi .small{margin-bottom:8px;}
 
 /* ===================== */
-/* CORREÇÃO DO SCROLL    */
+/* SCROLL E TABELAS FLUIDAS */
 /* ===================== */
 .table-wrap {
   border-radius: 10px;
   border: 1px solid var(--glass);
   background: var(--panel);
   padding: 0;
+  overflow-x:auto;
 }
 
 .table-scroll {
@@ -70,6 +72,7 @@ html,body{height:100%;width:100%;background:var(--bg);font-size:15px;-webkit-fon
 
 table {
   width: 100%;
+  min-width:600px; /* Garante scroll horizontal em telas pequenas */
   border-collapse: collapse;
   font-size: 13px;
   position: relative;
@@ -92,7 +95,7 @@ tbody td {
 
 td:first-child,th:first-child{text-align:left;}
 tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
-.chart-area{height:400px;margin-top:12px;width:100%;}
+.chart-area{height:400px;margin-top:12px;width:100%;overflow-x:auto;}
 .chart-area canvas{width:100% !important;height:auto !important;}
 
 /* Comparativo lado a lado */
@@ -181,7 +184,7 @@ tbody tr:nth-child(even){background:rgba(255,255,255,0.03);}
 #tableA tbody tr:last-child td, #tableB tbody tr:last-child td {border-bottom:none;}
 
 /* Totais comparativos */
-.totals-comparison{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.totals-comparison{display:grid;grid-template-columns:1fr 1fr;gap:20px;overflow-x:auto;}
 .totals-card{padding:15px 20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.2);}
 .totals-card h4{margin-bottom:10px;font-weight:700;text-transform:uppercase;font-size:14px;}
 .totals-card.gold{border-left:4px solid #c9a84b;background-color: rgba(201, 168, 75, 0.08);}
